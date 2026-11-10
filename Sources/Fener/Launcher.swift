@@ -18,6 +18,7 @@ struct Mode {
     var width: CGFloat? = nil   // overrides the theme width while this mode is open
     var dynamicWidth: (() -> CGFloat?)? = nil  // asked each time, for widths that follow config
     var key = ""               // identifies one opened instance, e.g. for a refreshing menu
+    var query = ""             // typed into the field when this mode opens
     var search: (String) -> [Item]
 }
 
@@ -291,7 +292,7 @@ final class Launcher: NSObject, NSWindowDelegate, NSTableViewDataSource, NSTable
 
     func push(_ m: Mode) {
         stack.append(m)
-        field.stringValue = ""
+        field.stringValue = m.query
         setPlaceholder()
         filter()
         resize()  // the new mode may have its own width

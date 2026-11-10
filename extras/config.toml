@@ -15,6 +15,7 @@ emoji = ":"
 clipboard = "*"
 menus = ">"
 windows = ";"
+snippets = "!"
 
 # Currency conversion ("100 usd to try") uses the European Central Bank's daily reference
 # rates. fener downloads that public file only when you type a conversion and its copy is

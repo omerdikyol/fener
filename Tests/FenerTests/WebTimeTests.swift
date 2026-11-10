@@ -115,3 +115,54 @@ final class TimeCalcTests: XCTestCase {
         XCTAssertNil(v("10 km to mi"))
     }
 }
+
+final class SnippetDictionaryTests: XCTestCase {
+    func testExpand() {
+        let now = ISO8601DateFormatter().date(from: "2026-11-11T11:05:00Z")!
+        let s = Snippets.expand("{date} {time:HH} {date:EEE d MMM} {clipboard} {uuid} {nope} {datetime:yyyy}",
+                                now: now, clipboard: "clip", uuid: { "U-1" })
+        let tz = TimeZone.current.secondsFromGMT(for: now)
+        var cal = Calendar(identifier: .gregorian); cal.timeZone = .current
+        let hour = String(format: "%02d", cal.component(.hour, from: now))
+        XCTAssertEqual(s, "2026-11-11 \(hour) Wed 11 Nov clip U-1 {nope} 2026", "tz offset \(tz)")
+        XCTAssertEqual(Snippets.expand("{clipboard}", clipboard: nil), "")
+    }
+
+    func testLoadFolder() throws {
+        let dir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: dir) }
+        try "Teşekkürler,\nİyi günler".write(to: dir.appendingPathComponent("Signature.txt"), atomically: true, encoding: .utf8)
+        try "x".write(to: dir.appendingPathComponent(".hidden"), atomically: true, encoding: .utf8)
+        try "addr".write(to: dir.appendingPathComponent("address"), atomically: true, encoding: .utf8)
+        XCTAssertEqual(Snippets(dir: dir).all.map(\.name), ["address", "Signature"])
+        XCTAssertEqual(Snippets(dir: dir).all.last?.text, "Teşekkürler,\nİyi günler")
+    }
+
+    func testSenses() {
+        let en = "launcher launch·er | ˈlôn(t)SHər | noun a structure that holds a rocket: a rocket launcher. • a rocket that is used to convey a satellite. ORIGIN 1880s."
+        XCTAssertEqual(Definitions.senses(en), [
+            "launcher launch·er | ˈlôn(t)SHər | noun a structure that holds a rocket: a rocket launcher.",
+            "a rocket that is used to convey a satellite.", "ORIGIN 1880s."])
+        let tr = "kitap a. Ar. 1 esk. basılı yapraklar. 2 basımevinde basılıp kapak geçirilmiş nesne. ör. Bu kitap yeni çıktı. 3 ciltli nesne."
+        XCTAssertEqual(Definitions.senses(tr).count, 3)
+        XCTAssertTrue(Definitions.senses(tr)[1].hasPrefix("2 basımevinde"))
+    }
+
+    func testHeader() {
+        let h = Definitions.header("serendipity ser·en·dip·i·ty | ˌserənˈdipədē | noun the occurrence of events by chance")
+        XCTAssertEqual(h.header, "serendipity ser·en·dip·i·ty | ˌserənˈdipədē | noun")
+        XCTAssertEqual(h.sense, "the occurrence of events by chance")
+        XCTAssertEqual(Definitions.header("kitap a. Ar. 1 esk. basılı yapraklar.").sense, "1 esk. basılı yapraklar.")
+        XCTAssertEqual(Definitions.header("plain text").sense, "plain text")
+        XCTAssertEqual(Definitions.header("l l | p | noun holds a rocket: a rocket launcher | a grenade launcher.").sense,
+                       "holds a rocket: a rocket launcher | a grenade launcher.")  // examples also use "|"
+        XCTAssertEqual(Definitions.header("w w\u{a0}|\u{a0}w\u{a0}|\u{a0}noun a sense").sense, "a sense")  // no-break spaces
+    }
+
+    func testSystemDictionaryWhenAvailable() throws {
+        guard let d = Definitions.lookup("launcher") else { throw XCTSkip("no English dictionary enabled") }
+        XCTAssertTrue(d.contains("rocket"))
+        XCTAssertNil(Definitions.lookup("xyzzyqq"))
+    }
+}

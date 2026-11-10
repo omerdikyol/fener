@@ -31,7 +31,8 @@ struct Menu {
     ///     subtitle = "dark"          # optional
     ///     icon = "paintpalette"      # optional: SF Symbol, nerd-font glyph, app/image path
     ///     command = "theme tokyo"    # or: menu = "other-menu" (a menu file or a built-in:
-    ///                                #     apps, clipboard, emoji, files, system, windows, calc)
+    ///                                #     apps, clipboard, emoji, files, system, windows, calc,
+    ///                                #     quit, snippets, dictionary)
     ///     terminal = true            # optional: run the command in a terminal window
     ///     confirm = true             # optional: ask before running
     static func parse(name: String, toml: String) throws -> Menu {

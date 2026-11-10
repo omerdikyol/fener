@@ -16,6 +16,16 @@ icon = "nf-md-clipboard_text"
 menu = "clipboard"
 
 [[entry]]
+name = "Snippets"
+icon = "nf-md-text_box_edit"
+menu = "snippets"
+
+[[entry]]
+name = "Dictionary"
+icon = "nf-md-book_open_variant"
+menu = "dictionary"
+
+[[entry]]
 name = "Color Picker"
 subtitle = "copies the hex"
 icon = "nf-md-eyedropper"

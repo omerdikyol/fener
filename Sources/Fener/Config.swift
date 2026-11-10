@@ -14,6 +14,7 @@ import AppKit
 ///     clipboard = "*"
 ///     menus = ">"
 ///     windows = ";"
+///     snippets = "!"
 ///
 ///     [currency]                     # ECB daily rates, fetched only when a conversion is typed
 ///     enabled = true
@@ -26,7 +27,7 @@ struct Config {
     var theme = "tokyo-night"
     var home = "menu"   // menu listed while the search is empty; "" lists apps instead
     var terminal = "open -na Ghostty --args --command={} --quit-after-last-window-closed=true"
-    var prefixes: [String: String] = ["calc": "=", "files": "/", "emoji": ":", "clipboard": "*", "menus": ">", "windows": ";"]
+    var prefixes: [String: String] = ["calc": "=", "files": "/", "emoji": ":", "clipboard": "*", "menus": ">", "windows": ";", "snippets": "!"]
     var clipboardEnabled = true
     var clipboardMaxItems = 200
     var clipboardMaxItemBytes = 5_000_000

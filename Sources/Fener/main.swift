@@ -177,6 +177,36 @@ func linkItem(_ link: Quicklink, _ q: String, score: Int) -> Item {
          run: { if let u = link.url(for: q) { NSWorkspace.shared.open(u) } }, score: score)
 }
 
+// MARK: snippets and definitions
+
+let snippets = Snippets(dir: configDir.appendingPathComponent("snippets"))
+
+func snippetItems(_ q: String) -> [Item] {
+    snippets.all.compactMap { sn in
+        guard let s = q.isEmpty ? 0 : Fuzzy.score(q, sn.name) else { return nil }
+        let first = sn.text.split(whereSeparator: \.isNewline).first.map(String.init) ?? ""
+        return Item(id: "snippet:" + sn.name, title: sn.name, subtitle: first, icon: sf("nf-md-text_box_edit"),
+                    run: { Clipboard.copyText(Snippets.expand(sn.text)) }, score: s)
+    }.sorted { $0.score > $1.score }
+}
+
+func definitionItems(_ q: String) -> [Item] {
+    let word = q.trimmingCharacters(in: .whitespaces)
+    guard let text = Definitions.lookup(word) else {
+        return word.isEmpty ? [] : [Item(id: "define:none", title: "No definition for “\(word)”",
+                                         subtitle: "dictionaries enabled in Dictionary.app", icon: sf("nf-md-book_open_variant"))]
+    }
+    var senses = Definitions.senses(text)
+    let (header, firstSense) = Definitions.header(senses.first ?? "")
+    if !senses.isEmpty { senses[0] = firstSense }
+    let open = Item(id: "define:open", title: word, subtitle: (header.isEmpty ? "" : header + "  ·  ") + "⏎ opens Dictionary",
+                    icon: sf("nf-md-book_open_variant"),
+                    run: { if let u = URL(string: "dict://" + Quicklink.encode(word)) { NSWorkspace.shared.open(u) } })
+    return [open] + senses.filter { !$0.isEmpty }.enumerated().map { i, s in
+        Item(id: "define:\(i)", title: s, subtitle: "⏎ copies", icon: sf("nf-md-format_quote_close"), run: { Clipboard.copyText(s) })
+    }
+}
+
 // MARK: running apps and colors
 
 func quitItems(_ q: String) -> [Item] {
@@ -297,6 +327,8 @@ let builtins: [String: Mode] = [
     "apps": Mode(prompt: "Apps…", search: apps.search),
     "clipboard": Mode(prompt: "Clipboard…", search: clipboardItems),
     "quit": Mode(prompt: "Quit…", search: quitItems),
+    "snippets": Mode(prompt: "Snippets…", search: snippetItems),
+    "dictionary": Mode(prompt: "Define…", width: 600, search: definitionItems),
     "system": Mode(prompt: "System…", search: systemItems),
     "emoji": Mode(prompt: "Emoji…", search: emojiItems),
     "files": Mode(prompt: "Files…", search: files.search),
@@ -332,6 +364,7 @@ func loadSettings() -> (Config, Theme, [String]) {
 func applySettings() {
     let (c, th, p) = loadSettings()
     menus.load()
+    snippets.load()
     config = c
     problems = p + menus.errors
     clipboard.maxItems = c.clipboardMaxItems
@@ -357,6 +390,7 @@ var prefixes: [(String, (String) -> [Item])] {
         ("clipboard", { config.clipboardEnabled ? clipboardItems($0) : [] }),
         ("menus", { searchMenus($0, entries: true) }),
         ("windows", { windows.search($0, all: true) }),
+        ("snippets", snippetItems),
     ]
     // Longest prefix first, so "::" could coexist with ":".
     return all.compactMap { name, f in config.prefixes[name].flatMap { $0.isEmpty ? nil : ($0, f) } }
@@ -387,10 +421,19 @@ let root = Mode(prompt: "Search…", dynamicWidth: { homeMenu?.width }) { raw in
     // Windows rank a bit below apps and menus: long titles match short queries by accident.
     var top: [Item] = [], links: [Item] = []
     if let a = answerItem(raw, forced: false) { top.append(a) }
+    // "define <word>": a row that opens the wide dictionary view for that word.
+    if raw.lowercased().hasPrefix("define "), case let w = String(raw.dropFirst(7)).trimmingCharacters(in: .whitespaces), !w.isEmpty {
+        var dict = builtins["dictionary"]!
+        dict.query = w
+        let first = Definitions.lookup(w).map { Definitions.header(Definitions.senses($0).first ?? "").sense } ?? "no definition found"
+        top.append(Item(id: "define", title: "Define “\(w)”", subtitle: first, accessory: "›",
+                        icon: sf("nf-md-book_open_variant"), score: 10_000, submenu: { dict }))
+    }
     if let (link, q) = quicklinks.match(raw) {
         if q.isEmpty { links.append(linkItem(link, "", score: 0)) } else { top.append(linkItem(link, q, score: 10_000)) }
     }
     let merged = merge(apps.search(raw), searchMenus(raw, entries: true), systemItems(raw), links,
+                       snippetItems(raw).map { var i = $0; i.score -= 2; i.subtitle = "snippet"; return i },
                        windows.search(raw, all: false).map { var i = $0; i.score -= 10; return i })
     // Last row: search the web with the default engine (it only opens the browser).
     let web = quicklinks.defaultEngine.map { [linkItem($0, raw, score: Int.min)] } ?? []
@@ -399,7 +442,7 @@ let root = Mode(prompt: "Search…", dynamicWidth: { homeMenu?.width }) { raw in
 
 func makeLauncher() -> Launcher {
     let l = Launcher(theme: theme, root: root)
-    l.onShow = { apps.refresh(); windows.refresh(); menus.load() }
+    l.onShow = { apps.refresh(); windows.refresh(); menus.load(); snippets.load() }
     l.prewarm()
     return l
 }

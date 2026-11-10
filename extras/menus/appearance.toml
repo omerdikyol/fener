@@ -1,0 +1,11 @@
+width = 320
+
+[[entry]]
+name = "Theme"
+icon = "paintpalette"
+menu = "theme"
+
+[[entry]]
+name = "Background"
+icon = "photo"
+menu = "wallpaper"

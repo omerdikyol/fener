@@ -1,0 +1,51 @@
+width = 320
+
+[[entry]]
+name = "Keybindings"
+icon = "keyboard"
+menu = "keybindings"
+
+[[entry]]
+name = "OmniWM"
+icon = "rectangle.split.3x1"
+command = "open https://omniwm.app"
+
+[[entry]]
+name = "Ghostty"
+icon = "terminal"
+command = "open https://ghostty.org/docs"
+
+[[entry]]
+name = "Karabiner"
+icon = "keyboard.badge.ellipsis"
+command = "open https://karabiner-elements.pqrs.org/docs/"
+
+[[entry]]
+name = "SketchyBar"
+icon = "menubar.rectangle"
+command = "open https://felixkratz.github.io/SketchyBar/"
+
+[[entry]]
+name = "Homebrew"
+icon = "mug"
+command = "open https://docs.brew.sh"
+
+[[entry]]
+name = "Neovim"
+icon = "chevron.left.forwardslash.chevron.right"
+command = "open https://neovim.io/doc/user/"
+
+[[entry]]
+name = "Zsh"
+icon = "number"
+command = "open https://zsh.sourceforge.io/Doc/"
+
+[[entry]]
+name = "Starship"
+icon = "sparkle"
+command = "open https://starship.rs/config/"
+
+[[entry]]
+name = "macOS Shortcuts"
+icon = "command"
+command = "open https://support.apple.com/en-us/102650"

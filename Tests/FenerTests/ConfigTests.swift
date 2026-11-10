@@ -93,4 +93,37 @@ final class ConfigTests: XCTestCase {
         XCTAssertEqual(c.prefixes, Config().prefixes)
         XCTAssertEqual(p, [])
     }
+
+    func testShippedMenusAndThemesParse() throws {
+        let root = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
+        let fm = FileManager.default
+        let menuDir = root.appendingPathComponent("extras/menus")
+        var names: Set<String> = []
+        for f in try fm.contentsOfDirectory(atPath: menuDir.path) {
+            names.insert((f as NSString).deletingPathExtension)
+            guard f.hasSuffix(".toml") else { continue }
+            XCTAssertNoThrow(try Menu.parse(name: f, toml: String(contentsOf: menuDir.appendingPathComponent(f), encoding: .utf8)), f)
+        }
+        // Every submenu a shipped menu points at exists, as a file or a built-in.
+        let builtins: Set = ["apps", "clipboard", "emoji", "files", "system", "windows", "calc"]
+        for f in try fm.contentsOfDirectory(atPath: menuDir.path) where f.hasSuffix(".toml") {
+            let m = try Menu.parse(name: f, toml: String(contentsOf: menuDir.appendingPathComponent(f), encoding: .utf8))
+            for e in m.entries where !e.menu.isEmpty {
+                XCTAssertTrue(names.contains(e.menu) || builtins.contains(e.menu), "\(f): \(e.menu)")
+            }
+        }
+        for f in try fm.contentsOfDirectory(atPath: root.appendingPathComponent("extras/themes").path) {
+            var p: [String] = []
+            _ = Theme.parse(try String(contentsOf: root.appendingPathComponent("extras/themes/" + f), encoding: .utf8), name: f, problems: &p)
+            XCTAssertEqual(p, [], f)
+        }
+    }
+
+    func testMenuFlagsAndWidth() throws {
+        let m = try Menu.parse(name: "m", toml: "width = 320\n[[entry]]\nname = \"a\"\ncommand = \"x\"\nterminal = true\nconfirm = true")
+        XCTAssertEqual(m.width, 320)
+        XCTAssertTrue(m.entries[0].terminal && m.entries[0].confirm)
+        XCTAssertThrowsError(try Menu.parse(name: "m", toml: "width = 50"))
+        XCTAssertThrowsError(try Menu.parse(name: "m", toml: "[[entry]]\nname = \"a\"\ncommand = \"x\"\nterminal = \"yes\""))
+    }
 }

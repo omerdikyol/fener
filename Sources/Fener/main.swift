@@ -69,7 +69,7 @@ func menuMode(_ m: Menu) -> Mode {
     if m.executable != nil {
         menus.list(m) { box.value = $0; launcher.refilter() }
     }
-    return Mode(prompt: m.prompt) { q in rank(box.value, q).map { entryItem($0.0, of: m, score: $0.1) } }
+    return Mode(prompt: m.prompt, width: m.width) { q in rank(box.value, q).map { entryItem($0.0, of: m, score: $0.1) } }
 }
 
 func entryItem(_ e: MenuEntry, of m: Menu, score: Int) -> Item {
@@ -78,11 +78,22 @@ func entryItem(_ e: MenuEntry, of m: Menu, score: Int) -> Item {
     let choice = e.value.isEmpty ? e.name : e.value
     let env = ["FENER_MENU": m.name, "FENER_CHOICE": choice]
     if !e.menu.isEmpty {
-        item.submenu = { menus.menus[e.menu].map(menuMode) ?? message("No menu named \(e.menu)") }
-    } else if !e.command.isEmpty {
-        item.run = { Shell.sh(e.command, extraEnv: env) }
+        item.submenu = { menus.menus[e.menu].map(menuMode) ?? builtinMode(e.menu) ?? message("No menu named \(e.menu)") }
+        return item
+    }
+    if !e.command.isEmpty {
+        item.run = e.terminal ? { Shell.inTerminal(e.command, template: config.terminal, extraEnv: env) }
+                              : { Shell.sh(e.command, extraEnv: env) }
     } else if let exe = m.executable {
         item.run = { Shell.run(exe.path, [choice], extraEnv: env) }  // dmenu style: chosen entry comes back as $1
+    }
+    if e.confirm {
+        let run = item.run
+        item.accessory = "›"
+        item.submenu = { Mode(prompt: "\(e.name)?", width: m.width) { _ in [
+            Item(id: "confirm:yes", title: "Yes", icon: sf("checkmark"), run: run),
+            Item(id: "confirm:no", title: "Cancel", icon: sf("xmark")),
+        ] } }
     }
     return item
 }
@@ -188,7 +199,8 @@ func emojiItems(_ q: String) -> [Item] {
     }
 }
 
-/// Built-in modes for `fener show <name>`; a user menu with the same name wins.
+/// Built-in modes for `fener show <name>` and `menu = "<name>"`; a user menu with the same name wins.
+func builtinMode(_ name: String) -> Mode? { name == "apps" ? root : builtins[name] }
 let builtins: [String: Mode] = [
     "clipboard": Mode(prompt: "Clipboard…", search: clipboardItems),
     "system": Mode(prompt: "System…", search: systemItems),
@@ -229,10 +241,10 @@ func applySettings() {
     if th != theme {
         theme = th
         Icons.clearCache()
-        let wasVisible = launcher.isVisible
+        let wasVisible = launcher.isVisible, open = launcher.openMenu
         launcher.tearDown()
         launcher = makeLauncher()
-        if wasVisible { launcher.show() }
+        if wasVisible { launcher.show(open) }
     } else {
         launcher.refilter()
     }
@@ -319,7 +331,7 @@ let server = IPC.Server(path: IPC.socketPath) { words in
         if words.count > 1 {
             menus.load()
             if let m = menus.menus[words[1]] { launcher.show(menuMode(m)) }
-            else if let b = builtins[words[1]] { launcher.show(b) }
+            else if let b = builtinMode(words[1]) { launcher.show(b) }
             else { return "error: no menu named \(words[1]) in \(menus.dir.path) (built in: \(builtins.keys.sorted().joined(separator: ", ")))" }
             if words.count > 2 { launcher.setQuery(words.dropFirst(2).joined(separator: " ")) }
         } else { launcher.show() }

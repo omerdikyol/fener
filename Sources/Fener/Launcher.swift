@@ -15,6 +15,7 @@ struct Item {
 /// What the panel is searching: the root (apps, windows, menus) or one menu.
 struct Mode {
     var prompt: String
+    var width: CGFloat? = nil   // overrides the theme width while this mode is open
     var search: (String) -> [Item]
 }
 
@@ -39,7 +40,10 @@ final class Launcher: NSObject, NSWindowDelegate, NSTableViewDataSource, NSTable
     private var hiding = false
     private var keyMonitor: Any?
     private var topY: CGFloat = 0
+    private var centerX: CGFloat = 0
     private var mode: Mode { stack[stack.count - 1] }
+    /// The open menu, if one is open above the root (kept across a theme rebuild).
+    var openMenu: Mode? { stack.count > 1 ? stack.last : nil }
     var onShow: () -> Void = {}
 
     // Vertical metrics: padding, search line, gap, list, padding.
@@ -174,9 +178,11 @@ final class Launcher: NSObject, NSWindowDelegate, NSTableViewDataSource, NSTable
         // Top edge fixed so the panel grows downward as results change; centered at its tallest.
         let maxH = chromeH + theme.rowHeight * (CGFloat(theme.visibleRows) + 0.5)
         topY = (vf.midY + maxH / 2).rounded()
+        centerX = vf.midX
         panel.setFrameOrigin(NSPoint(x: (vf.midX - theme.width / 2).rounded(), y: topY - panel.frame.height))
         if !field.stringValue.isEmpty { field.stringValue = "" }
         filter()
+        if (self.mode.width ?? theme.width) != panel.frame.width { resize() }
         // Start half visible: a fade from 0 spends its first composited frame fully transparent,
         // which delayed the panel by about a frame.
         panel.alphaValue = 0.5
@@ -285,6 +291,7 @@ final class Launcher: NSObject, NSWindowDelegate, NSTableViewDataSource, NSTable
         field.stringValue = ""
         setPlaceholder()
         filter()
+        resize()  // the new mode may have its own width
     }
 
     private func pop() {
@@ -292,6 +299,7 @@ final class Launcher: NSObject, NSWindowDelegate, NSTableViewDataSource, NSTable
         stack.removeLast()
         setPlaceholder()
         filter()
+        resize()
     }
 
     /// Re-runs the current search after a source changed, keeping the selected row if it is still there.
@@ -320,13 +328,16 @@ final class Launcher: NSObject, NSWindowDelegate, NSTableViewDataSource, NSTable
     private func resize() {
         let rows = min(CGFloat(items.count), CGFloat(theme.visibleRows) + 0.5)
         let h = (chromeH - (items.isEmpty ? gap : 0) + rows * theme.rowHeight).rounded()
+        let w = mode.width ?? theme.width
         var f = panel.frame
         if panel.isVisible || topY > 0 { f.origin.y = topY - h }
-        f.size.height = h
+        if centerX > 0 { f.origin.x = (centerX - w / 2).rounded() }
+        f.size = NSSize(width: w, height: h)
         panel.setFrame(f, display: panel.isVisible)
         // Explicit frames: autoresizing loses track once the list height reaches zero.
-        field.frame.origin.y = h - pad - searchH
-        scroll.frame = NSRect(x: pad, y: pad, width: theme.width - 2 * pad, height: rows * theme.rowHeight)
+        field.frame = NSRect(x: pad + 2, y: h - pad - searchH, width: w - 2 * pad - 4, height: searchH)
+        scroll.frame = NSRect(x: pad, y: pad, width: w - 2 * pad, height: rows * theme.rowHeight)
+        table.tableColumns.first?.width = w - 2 * pad
         let overflow = CGFloat(items.count) > CGFloat(theme.visibleRows)
         CATransaction.begin(); CATransaction.setDisableActions(true)
         fade.frame = scroll.bounds

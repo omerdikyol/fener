@@ -1,0 +1,27 @@
+width = 320
+
+[[entry]]
+name = "Toggle"
+icon = "switch.2"
+menu = "toggle"
+
+[[entry]]
+name = "Emoji"
+icon = "face.smiling"
+menu = "emoji"
+
+[[entry]]
+name = "Clipboard History"
+icon = "list.clipboard.fill"
+menu = "clipboard"
+
+[[entry]]
+name = "Capture"
+icon = "camera.fill"
+menu = "capture"
+
+[[entry]]
+name = "Speed Test"
+icon = "gauge.with.dots.needle.67percent"
+command = "networkQuality -v"
+terminal = true

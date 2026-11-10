@@ -8,6 +8,8 @@ struct MenuEntry: Equatable {
     var command = ""      // run with /bin/sh -c
     var menu = ""         // open this menu instead (a submenu)
     var value = ""        // executable menus: what is handed back (defaults to name)
+    var terminal = false  // run the command in a terminal window (config: terminal)
+    var confirm = false   // ask "Yes / Cancel" first
 }
 
 /// A menu from ~/.config/fener/menus: `<name>.toml` with static entries, or an executable
@@ -18,15 +20,20 @@ struct Menu {
     var icon = ""
     var entries: [MenuEntry]      // static entries (TOML menus)
     var executable: URL?          // dmenu-style menus
+    var width: CGFloat? = nil     // panel width while this menu is open
 
     /// Parses a TOML menu:
     ///     prompt = "Themes…"          # optional
     ///     icon = "paintpalette"       # optional, shown where the menu itself is listed
+    ///     width = 320                 # optional panel width for this menu
     ///     [[entry]]
     ///     name = "Tokyo Night"
     ///     subtitle = "dark"          # optional
     ///     icon = "paintpalette"      # optional: SF Symbol, nerd-font glyph, app/image path
-    ///     command = "theme tokyo"    # or: menu = "other-menu"
+    ///     command = "theme tokyo"    # or: menu = "other-menu" (a menu file or a built-in:
+    ///                                #     apps, clipboard, emoji, files, system, windows, calc)
+    ///     terminal = true            # optional: run the command in a terminal window
+    ///     confirm = true             # optional: ask before running
     static func parse(name: String, toml: String) throws -> Menu {
         let t = try Toml.parse(toml)
         let rows = t["entry"] as? [[String: Any]] ?? []
@@ -37,16 +44,29 @@ struct Menu {
                 guard let s = v as? String else { throw Toml.ParseError(line: 0, message: "entry \(i + 1): \(k) must be a string") }
                 return s
             }
+            func bool(_ k: String) throws -> Bool {
+                guard let v = r[k] else { return false }
+                guard let b = v as? Bool else { throw Toml.ParseError(line: 0, message: "entry \(i + 1): \(k) must be true or false") }
+                return b
+            }
             let e = MenuEntry(name: try str("name"), subtitle: try str("subtitle"), icon: try str("icon"),
-                              command: try str("command"), menu: try str("menu"))
+                              command: try str("command"), menu: try str("menu"),
+                              terminal: try bool("terminal"), confirm: try bool("confirm"))
             if e.name.isEmpty { throw Toml.ParseError(line: 0, message: "entry \(i + 1) has no name") }
             if e.command.isEmpty == e.menu.isEmpty {
                 throw Toml.ParseError(line: 0, message: "entry \(i + 1) (\(e.name)) needs exactly one of command or menu")
             }
             entries.append(e)
         }
+        var width: CGFloat? = nil
+        if let w = t["width"] {
+            guard let n = (w as? Int).map({ CGFloat($0) }) ?? (w as? Double).map({ CGFloat($0) }), n >= 200 else {
+                throw Toml.ParseError(line: 0, message: "width must be a number ≥ 200")
+            }
+            width = n
+        }
         return Menu(name: name, prompt: t["prompt"] as? String ?? defaultPrompt(name), icon: t["icon"] as? String ?? "",
-                    entries: entries)
+                    entries: entries, width: width)
     }
 
     static func defaultPrompt(_ name: String) -> String { title(name) + "…" }
@@ -60,7 +80,8 @@ struct Menu {
             guard let name = o["name"] as? String, !name.isEmpty else { return nil }
             func s(_ k: String) -> String { o[k] as? String ?? "" }
             return MenuEntry(name: name, subtitle: s("subtitle"), icon: s("icon"), command: s("command"),
-                             menu: s("menu"), value: s("value"))
+                             menu: s("menu"), value: s("value"),
+                             terminal: o["terminal"] as? Bool ?? false, confirm: o["confirm"] as? Bool ?? false)
         }
         let trimmed = out.trimmingCharacters(in: .whitespacesAndNewlines)
         if trimmed.hasPrefix("["), let a = try? JSONSerialization.jsonObject(with: Data(trimmed.utf8)) as? [[String: Any]] {
@@ -142,6 +163,24 @@ enum Shell {
     }
 
     static func sh(_ command: String, extraEnv: [String: String] = [:]) { run("/bin/sh", ["-c", command], extraEnv: extraEnv) }
+
+    /// Runs `command` in a new terminal window that waits for Return before closing.
+    /// `template` is split on spaces and `{}` becomes "/bin/sh <script>"; the script sets
+    /// PATH and the env first, because apps started with `open` get a bare environment.
+    static func inTerminal(_ command: String, template: String, extraEnv: [String: String] = [:]) {
+        let dir = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)[0].appendingPathComponent("fener/run")
+        try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        let script = dir.appendingPathComponent(UUID().uuidString + ".sh")
+        func q(_ s: String) -> String { "'" + s.replacingOccurrences(of: "'", with: "'\\''") + "'" }
+        var body = "#!/bin/sh\nrm -f \"$0\"\nexport PATH=\(q(path))\n"
+        for (k, v) in extraEnv.sorted(by: { $0.key < $1.key }) { body += "export \(k)=\(q(v))\n" }
+        body += command + "\nstatus=$?\nprintf '\\n[exit %s] Press Return to close.' \"$status\"\nread _\n"
+        guard (try? body.write(to: script, atomically: true, encoding: .utf8)) != nil else { return }
+        let parts = template.split(separator: " ").map { $0.replacingOccurrences(of: "{}", with: "/bin/sh " + script.path) }
+        guard let exe = parts.first else { return }
+        if exe.hasPrefix("/") { run(exe, Array(parts.dropFirst())) }
+        else if let found = which(exe) { run(found, Array(parts.dropFirst())) }
+    }
 
     /// Runs and returns stdout, or nil on failure or timeout. Call off the main thread.
     static func capture(_ exe: String, _ args: [String], timeout: TimeInterval) -> String? {

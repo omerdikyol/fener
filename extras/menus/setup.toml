@@ -1,0 +1,41 @@
+# Opens config files. `open -t` uses the default text editor; change it to your editor,
+# e.g. open -a "Visual Studio Code".
+width = 320
+
+[[entry]]
+name = "fener"
+subtitle = "config.toml"
+icon = "slider.horizontal.3"
+command = "mkdir -p ~/.config/fener && touch ~/.config/fener/config.toml && open -t ~/.config/fener/config.toml"
+
+[[entry]]
+name = "fener Menus"
+subtitle = "folder"
+icon = "folder"
+command = "open ~/.config/fener/menus"
+
+[[entry]]
+name = "Ghostty"
+icon = "terminal"
+command = "open -t \"$HOME/Library/Application Support/com.mitchellh.ghostty/config\""
+
+[[entry]]
+name = "Karabiner"
+icon = "keyboard"
+command = "open -a Karabiner-Elements"
+
+[[entry]]
+name = "SketchyBar"
+icon = "menubar.rectangle"
+command = "open -t ~/.config/sketchybar/sketchybarrc"
+
+[[entry]]
+name = "Starship"
+icon = "sparkle"
+command = "open -t ~/.config/starship.toml"
+
+[[entry]]
+name = "OmniWM"
+subtitle = "settings app (its file is strict)"
+icon = "rectangle.split.3x1"
+command = "open -a OmniWM"

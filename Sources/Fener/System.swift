@@ -14,6 +14,9 @@ struct SystemAction {
         SystemAction(name: "Lock Screen", subtitle: "system", icon: "lock", confirm: false, run: lock),
         SystemAction(name: "Sleep", subtitle: "system", icon: "moon", confirm: false) { pmset("sleepnow") },
         SystemAction(name: "Sleep Display", subtitle: "system", icon: "display", confirm: false) { pmset("displaysleepnow") },
+        SystemAction(name: "Screensaver", subtitle: "system", icon: "sparkles.tv", confirm: false) {
+            Shell.run("/usr/bin/open", ["-a", "ScreenSaverEngine"])
+        },
         SystemAction(name: "Restart", subtitle: "system", icon: "arrow.clockwise", confirm: true) {
             osa("tell application \"System Events\" to restart")
         },

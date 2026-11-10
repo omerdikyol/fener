@@ -1,0 +1,27 @@
+width = 320
+
+[[entry]]
+name = "Region to Clipboard"
+icon = "rectangle.dashed"
+command = "screencapture -i -c"
+
+[[entry]]
+name = "Region to Desktop"
+icon = "rectangle.dashed.badge.record"
+command = "screencapture -i \"$HOME/Desktop/Screenshot $(date '+%Y-%m-%d at %H.%M.%S').png\""
+
+[[entry]]
+name = "Window to Desktop"
+icon = "macwindow"
+command = "screencapture -i -W -o \"$HOME/Desktop/Screenshot $(date '+%Y-%m-%d at %H.%M.%S').png\""
+
+[[entry]]
+name = "Screen to Desktop"
+icon = "display"
+command = "screencapture \"$HOME/Desktop/Screenshot $(date '+%Y-%m-%d at %H.%M.%S').png\""
+
+[[entry]]
+name = "Record or More…"
+subtitle = "Screenshot app"
+icon = "record.circle"
+command = "open -a Screenshot"

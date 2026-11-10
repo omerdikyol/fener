@@ -1,0 +1,22 @@
+width = 320
+
+[[entry]]
+name = "Homebrew"
+subtitle = "update and upgrade"
+icon = "mug"
+command = "brew update && brew upgrade"
+terminal = true
+
+[[entry]]
+name = "macOS"
+subtitle = "Software Update"
+icon = "apple.logo"
+command = "open 'x-apple.systempreferences:com.apple.Software-Update-Settings.extension'"
+
+[[entry]]
+name = "fener"
+subtitle = "rebuild and reinstall"
+icon = "hammer"
+# Set this to where you cloned fener.
+command = "cd \"${FENER_SRC:-$HOME/src/fener}\" && git pull --ff-only; ./scripts/install.sh"
+terminal = true

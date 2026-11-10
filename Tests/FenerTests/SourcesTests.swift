@@ -24,3 +24,19 @@ final class SourcesTests: XCTestCase {
         XCTAssertFalse(FileSearch.useful(h + "/.config/fener/menus/a.toml"))
     }
 }
+
+final class TerminalTests: XCTestCase {
+    func testInTerminalRunsCommandWithEnvAndCleansUp() throws {
+        let out = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: out) }
+        // A "terminal" that just runs the script; `read` gets EOF from /dev/null and returns.
+        Shell.inTerminal("echo \"$FENER_CHOICE it's\" > '\(out.path)'", template: "/bin/sh -c {}",
+                         extraEnv: ["FENER_CHOICE": "quote's"])
+        let deadline = Date().addingTimeInterval(5)
+        while !FileManager.default.fileExists(atPath: out.path), Date() < deadline { usleep(20_000) }
+        usleep(100_000)
+        XCTAssertEqual(try String(contentsOf: out, encoding: .utf8), "quote's it's\n")
+        let runDir = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)[0].appendingPathComponent("fener/run")
+        XCTAssertEqual((try? FileManager.default.contentsOfDirectory(atPath: runDir.path))?.filter { $0.hasSuffix(".sh") }.count ?? 0, 0)
+    }
+}

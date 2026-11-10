@@ -1,0 +1,11 @@
+# Catppuccin Mocha colors (palette: github.com/catppuccin/catppuccin, MIT). Layout and font
+# keep the defaults.
+
+[colors]
+background = "#1e1e2e"
+background_opacity = 0.95
+border = "#b4befe"
+text = "#cdd6f4"
+muted = "#6c7086"
+accent = "#89b4fa"
+selection = "#313244"

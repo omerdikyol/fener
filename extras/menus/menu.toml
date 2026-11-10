@@ -1,0 +1,42 @@
+# The main menu: `fener show menu` (bound to Caps+Shift+Space in extras/karabiner-rule.json).
+width = 320
+
+[[entry]]
+name = "Apps"
+icon = "square.grid.3x3.fill"
+menu = "apps"
+
+[[entry]]
+name = "Learn"
+icon = "brain.head.profile"
+menu = "learn"
+
+[[entry]]
+name = "Appearance"
+icon = "paintpalette.fill"
+menu = "appearance"
+
+[[entry]]
+name = "Trigger"
+icon = "bolt.fill"
+menu = "trigger"
+
+[[entry]]
+name = "Setup"
+icon = "gearshape.fill"
+menu = "setup"
+
+[[entry]]
+name = "Update"
+icon = "arrow.triangle.2.circlepath"
+menu = "update"
+
+[[entry]]
+name = "About"
+icon = "info.circle"
+menu = "about"
+
+[[entry]]
+name = "System"
+icon = "power"
+menu = "system"

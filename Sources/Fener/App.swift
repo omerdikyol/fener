@@ -12,7 +12,17 @@ let windows = WindowProvider()
 
 final class Box<T> { var value: T; init(_ v: T) { value = v } }
 
-let clipboard = Clipboard(dir: cacheDir.appendingPathComponent("clipboard"))
+let supportDir = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0].appendingPathComponent("fener")
+let clipboard = Clipboard(dir: supportDir.appendingPathComponent("clipboard"), legacy: cacheDir.appendingPathComponent("clipboard"))
+
+/// Clipboard limits and filters from config.toml; recording starts or stops with `enabled`.
+func configureClipboard(_ c: Config) {
+    clipboard.maxItems = c.clipboardMaxItems
+    clipboard.maxItemBytes = c.clipboardMaxItemBytes
+    clipboard.keepDays = c.clipboardKeepDays
+    clipboard.ignoreApps = Set(c.clipboardIgnoreApps.map { $0.lowercased() })
+    if c.clipboardEnabled { clipboard.start() } else { clipboard.stop() }
+}
 let files = FileSearch()
 
 func sf(_ name: String) -> NSImage? { Icons.named(name, theme: theme) }
@@ -52,9 +62,7 @@ func applySettings() {
     let newProblems = p + menus.errors
     if newProblems != problems { newProblems.forEach { Log.error($0) } }
     problems = newProblems
-    clipboard.maxItems = c.clipboardMaxItems
-    clipboard.maxItemBytes = c.clipboardMaxItemBytes
-    if c.clipboardEnabled { clipboard.start() } else { clipboard.stop() }
+    configureClipboard(c)
     if th != theme {
         theme = th
         Icons.clearCache()

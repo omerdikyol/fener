@@ -27,6 +27,8 @@ import AppKit
 ///     enabled = true
 ///     max_items = 200
 ///     max_item_bytes = 5000000
+///     keep_days = 30                 # older items are deleted
+///     ignore_apps = ["com.1password.1password"]   # bundle ids or names: never recorded
 struct Config {
     var theme = "tokyo-night"
     var home = "menu"   // menu listed while the search is empty; "" lists apps instead
@@ -35,6 +37,8 @@ struct Config {
     var clipboardEnabled = true
     var clipboardMaxItems = 200
     var clipboardMaxItemBytes = 5_000_000
+    var clipboardKeepDays = 30
+    var clipboardIgnoreApps: [String] = []
     var currencyEnabled = true
     var aliases: [String: String] = [:]   // typed word -> menu, built-in view or app name
 
@@ -67,7 +71,10 @@ struct Config {
                     case ("enabled", let b as Bool): c.clipboardEnabled = b
                     case ("max_items", let i as Int) where i > 0: c.clipboardMaxItems = i
                     case ("max_item_bytes", let i as Int) where i > 0: c.clipboardMaxItemBytes = i
-                    case ("enabled", _), ("max_items", _), ("max_item_bytes", _): warn("clipboard.\(name) has a wrong type or value")
+                    case ("keep_days", let i as Int) where i > 0: c.clipboardKeepDays = i
+                    case ("ignore_apps", let a as [Any]) where a.allSatisfy({ $0 is String }): c.clipboardIgnoreApps = a as! [String]
+                    case ("enabled", _), ("max_items", _), ("max_item_bytes", _), ("keep_days", _), ("ignore_apps", _):
+                        warn("clipboard.\(name) has a wrong type or value")
                     default: warn("unknown key clipboard.\(name)")
                     }
                 }

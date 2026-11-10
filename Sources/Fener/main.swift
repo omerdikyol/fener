@@ -50,9 +50,7 @@ DispatchQueue.global(qos: .utility).async { _ = Emoji.all.count }  // build the 
 do {
     let (c, th, p) = loadSettings()
     config = c; theme = th; problems = p + menus.errors
-    clipboard.maxItems = c.clipboardMaxItems
-    clipboard.maxItemBytes = c.clipboardMaxItemBytes
-    if c.clipboardEnabled { clipboard.start() }
+    configureClipboard(c)
 }
 _ = launcher  // build and pre-warm the panel now (globals are lazy), after settings are loaded
 windows.onChange = { launcher.refilter() }

@@ -29,7 +29,14 @@ snippets = "!"
 [currency]
 enabled = true
 
+# Clipboard history is stored encrypted (key in your Keychain) in
+# ~/Library/Application Support/fener/clipboard and excluded from backups.
 [clipboard]
 enabled = true
 max_items = 200
 max_item_bytes = 5000000
+# Items older than this are deleted.
+keep_days = 30
+# Never record what is copied while one of these apps is in front (bundle ids or names),
+# for password managers that do not mark their copies as concealed.
+ignore_apps = []

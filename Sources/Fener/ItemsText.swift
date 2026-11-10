@@ -31,6 +31,7 @@ func definitionItems(_ q: String) -> [Item] {
 }
 
 func clipboardItems(_ q: String) -> [Item] {
+    clipboard.purgeExpired()
     var out: [Item] = []
     for c in clipboard.clips {
         let when = ago.localizedString(for: c.date, relativeTo: Date())
@@ -49,7 +50,7 @@ func clipboardItems(_ q: String) -> [Item] {
         case .image:
             title = "Image \(c.width)×\(c.height)"
             sub = when
-            icon = clipboard.imageURL(c).flatMap { Icons.named($0.path, theme: theme) }
+            icon = clipboard.thumbnail(c, side: theme.iconSize)
         }
         var score = 0
         if !q.isEmpty {

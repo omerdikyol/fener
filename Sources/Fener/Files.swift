@@ -82,3 +82,46 @@ final class FileSearch {
         return !path.dropFirst(home.count).contains("/.")
     }
 }
+
+/// A Spotlight query listed newest first by a date attribute: recent files
+/// (kMDItemLastUsedDate) and screenshots (kMDItemIsScreenCapture). Loads in the background,
+/// thumbnails included, and calls `onChange` on the main thread.
+final class SpotlightList {
+    struct Entry { let path: String; let date: Date }
+    let query: String, dateAttribute: CFString, limit: Int, thumbnails: Int
+    private(set) var entries: [Entry] = []
+    private(set) var thumbs: [String: NSImage] = [:]
+    var onChange: () -> Void = {}
+    private var loading = false, loadedAt = Date.distantPast
+
+    init(query: String, dateAttribute: CFString, limit: Int = 60, thumbnails: Int = 0) {
+        self.query = query; self.dateAttribute = dateAttribute; self.limit = limit; self.thumbnails = thumbnails
+    }
+
+    /// Reloads when older than a few seconds.
+    func refresh(iconSide: CGFloat) {
+        guard !loading, Date().timeIntervalSince(loadedAt) > 5 else { return }
+        loading = true
+        let (q, attr, limit, nThumbs) = (query, dateAttribute, limit, thumbnails)
+        DispatchQueue.global(qos: .userInitiated).async {
+            let out = Shell.capture("/usr/bin/mdfind", ["-onlyin", NSHomeDirectory(), q], timeout: 5) ?? ""
+            let list = out.split(separator: "\n").map(String.init)
+                .filter { FileSearch.useful($0) && !$0.hasSuffix(".app") && !$0.contains(".app/") }
+                .compactMap { p -> Entry? in
+                    guard let item = MDItemCreate(nil, p as CFString),
+                          let d = MDItemCopyAttribute(item, attr) as? Date else { return nil }
+                    return Entry(path: p, date: d)
+                }
+                .sorted { $0.date > $1.date }.prefix(limit)
+            var t: [String: NSImage] = [:]
+            for e in list.prefix(nThumbs) { t[e.path] = Icons.thumbnail(e.path, side: iconSide * 2) }
+            DispatchQueue.main.async {
+                self.entries = Array(list)
+                self.thumbs = t
+                self.loading = false
+                self.loadedAt = Date()
+                self.onChange()
+            }
+        }
+    }
+}

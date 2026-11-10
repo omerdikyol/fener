@@ -16,6 +16,10 @@ import AppKit
 ///     windows = ";"
 ///     snippets = "!"
 ///
+///     [aliases]                      # a typed word opens a menu, built-in view or app
+///     ws = "workspace"
+///     vol = "audio"
+///
 ///     [currency]                     # ECB daily rates, fetched only when a conversion is typed
 ///     enabled = true
 ///
@@ -32,6 +36,7 @@ struct Config {
     var clipboardMaxItems = 200
     var clipboardMaxItemBytes = 5_000_000
     var currencyEnabled = true
+    var aliases: [String: String] = [:]   // typed word -> menu, built-in view or app name
 
     /// Parses config text; `problems` collects errors and warnings worth showing to the user.
     static func parse(_ text: String, problems: inout [String]) -> Config {
@@ -65,6 +70,12 @@ struct Config {
                     case ("enabled", _), ("max_items", _), ("max_item_bytes", _): warn("clipboard.\(name) has a wrong type or value")
                     default: warn("unknown key clipboard.\(name)")
                     }
+                }
+            case "aliases":
+                guard let p = v as? [String: Any] else { warn("[aliases] must be a table"); continue }
+                for (name, value) in p {
+                    if let s = value as? String, !s.isEmpty { c.aliases[name.lowercased()] = s }
+                    else { warn("aliases.\(name) must be a menu, view or app name") }
                 }
             case "currency":
                 guard let p = v as? [String: Any] else { warn("[currency] must be a table"); continue }

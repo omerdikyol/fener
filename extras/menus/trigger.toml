@@ -16,6 +16,22 @@ icon = "nf-md-clipboard_text"
 menu = "clipboard"
 
 [[entry]]
+name = "Focus Timer"
+icon = "nf-md-timer_outline"
+menu = "focus"
+
+[[entry]]
+name = "Generate"
+subtitle = "UUID, password, lorem"
+icon = "nf-md-dice_multiple"
+menu = "generate"
+
+[[entry]]
+name = "Audio Devices"
+icon = "nf-md-volume_high"
+menu = "audio"
+
+[[entry]]
 name = "Snippets"
 icon = "nf-md-text_box_edit"
 menu = "snippets"

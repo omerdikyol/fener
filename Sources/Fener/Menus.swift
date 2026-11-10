@@ -281,7 +281,7 @@ enum Icons {
     }
 
     /// Square, center-cropped thumbnail decoded at icon size (a 5K wallpaper stays cheap).
-    private static func thumbnail(_ path: String, side: CGFloat) -> NSImage? {
+    static func thumbnail(_ path: String, side: CGFloat) -> NSImage? {
         guard let src = CGImageSourceCreateWithURL(URL(fileURLWithPath: path) as CFURL, nil),
               let cg = CGImageSourceCreateThumbnailAtIndex(src, 0, [
                   kCGImageSourceCreateThumbnailFromImageAlways: true,

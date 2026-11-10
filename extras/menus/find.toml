@@ -1,0 +1,37 @@
+width = 320
+
+[[entry]]
+name = "Files"
+icon = "nf-md-file_search"
+menu = "files"
+
+[[entry]]
+name = "Recent Files"
+icon = "nf-md-file_clock"
+menu = "recent"
+
+[[entry]]
+name = "Screenshots"
+icon = "nf-md-image_search"
+menu = "screenshots"
+
+[[entry]]
+name = "Bookmarks"
+subtitle = "Helium"
+icon = "nf-md-bookmark"
+menu = "bookmarks"
+
+[[entry]]
+name = "VS Code Projects"
+icon = "nf-md-microsoft_visual_studio_code"
+menu = "projects"
+
+[[entry]]
+name = "System Settings"
+icon = "nf-fa-cog"
+menu = "settings"
+
+[[entry]]
+name = "Windows"
+icon = "nf-md-dock_window"
+menu = "windows"

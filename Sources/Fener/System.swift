@@ -29,6 +29,18 @@ struct SystemAction {
         SystemAction(name: "Empty Trash", subtitle: "system", icon: "nf-md-delete", confirm: true) {
             osa("tell application \"Finder\" to empty trash")
         },
+        SystemAction(name: "Toggle Hidden Files", subtitle: "Finder", icon: "nf-md-eye", confirm: false) {
+            Shell.sh("[ \"$(defaults read com.apple.finder AppleShowAllFiles 2>/dev/null)\" = 1 ] && v=false || v=true; "
+                     + "defaults write com.apple.finder AppleShowAllFiles -bool $v && killall Finder")
+        },
+        SystemAction(name: "Eject All Disks", subtitle: "external drives and disk images", icon: "nf-md-eject", confirm: false) {
+            Shell.sh("for d in $(diskutil list external | awk '/^\\/dev\\//{print $1}'); do diskutil eject \"$d\"; done")
+        },
+        SystemAction(name: "Restart Finder", subtitle: "Finder", icon: "nf-md-restart", confirm: false) { Shell.sh("killall Finder") },
+        SystemAction(name: "Restart Dock", subtitle: "Dock", icon: "nf-md-restart", confirm: false) { Shell.sh("killall Dock") },
+        SystemAction(name: "Hide Other Apps", subtitle: "system", icon: "nf-md-eye_off", confirm: false) {
+            NSApp.hideOtherApplications(nil)
+        },
     ]
 
     private static func pmset(_ arg: String) { Shell.run("/usr/bin/pmset", [arg]) }

@@ -17,6 +17,12 @@ menus = ">"
 windows = ";"
 snippets = "!"
 
+# Typing an alias exactly opens a menu, a built-in view or an app.
+[aliases]
+# ws = "workspace"
+# vol = "audio"
+# code = "Visual Studio Code"
+
 # Currency conversion ("100 usd to try") uses the European Central Bank's daily reference
 # rates. fener downloads that public file only when you type a conversion and its copy is
 # more than a day old. false: never.

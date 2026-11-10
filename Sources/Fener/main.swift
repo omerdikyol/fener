@@ -263,11 +263,25 @@ func systemItems(_ q: String) -> [Item] {
         if a.confirm { item.submenu = { confirm(a) }; item.accessory = "›" } else { item.run = a.run }
         return item
     }
+    func view(_ title: String, _ icon: String, _ name: String) -> Item {
+        Item(id: "system:" + name, title: title, subtitle: "", accessory: "›", icon: sf(icon), submenu: { builtins[name]! })
+    }
+    // The System view (empty query) lists actions and the two process views; the other
+    // views live in the Find and Trigger menus and are reached here only by typing.
+    let inSystemView: Set = ["system:quit", "system:processes"]
     let extra = [
-        Item(id: "system:quit", title: "Quit Apps", subtitle: "system", accessory: "›", icon: sf("nf-md-application_cog"),
-             submenu: { builtins["quit"]! }),
+        view("Quit Apps", "nf-md-application_cog", "quit"),
         Item(id: "system:color", title: "Pick Color", subtitle: "system", icon: sf("nf-md-eyedropper"), run: pickColor),
+        view("Audio Devices", "nf-md-volume_high", "audio"),
+        view("Kill Process", "nf-md-chip", "processes"),
+        view("Recent Files", "nf-md-file_clock", "recent"),
+        view("Screenshots", "nf-md-image_search", "screenshots"),
+        view("System Settings", "nf-fa-cog", "settings"),
+        view("Generate (UUID, password, lorem)", "nf-md-dice_multiple", "generate"),
+        view("Bookmarks", "nf-md-bookmark", "bookmarks"),
+        view("VS Code Projects", "nf-md-microsoft_visual_studio_code", "projects"),
     ].compactMap { i -> Item? in
+        if q.isEmpty, !inSystemView.contains(i.id) { return nil }
         guard let s = q.isEmpty ? 0 : Fuzzy.score(q, i.title) else { return nil }
         var i = i; i.score = s; return i
     }
@@ -321,6 +335,128 @@ func emojiItems(_ q: String) -> [Item] {
     }
 }
 
+// MARK: settings panes, audio, bookmarks, projects, recents, generators, processes
+
+func settingsItems(_ q: String) -> [Item] {
+    SettingsPanes.all.compactMap { p in
+        guard let s = q.isEmpty ? 0 : Fuzzy.score(q, p.name) else { return nil }
+        return Item(id: "pane:" + p.id, title: p.name, subtitle: "System Settings", icon: sf(p.icon),
+                    run: { SettingsPanes.open(p.id) }, score: s)
+    }.sorted { $0.score > $1.score }
+}
+
+func audioItems(_ q: String) -> [Item] {
+    let devices = Audio.devices()
+    var out: [Item] = []
+    for input in [false, true] {
+        let current = Audio.defaultDevice(input: input)
+        for d in devices where input ? d.input : d.output {
+            let label = (input ? "Input: " : "Output: ") + d.name
+            guard let s = q.isEmpty ? 0 : Fuzzy.score(q, label) else { continue }
+            out.append(Item(id: "audio:\(input):\(d.id)", title: label, subtitle: d.id == current ? "current" : "",
+                            icon: sf(Audio.icon(d, input: input)), run: { Audio.setDefault(d.id, input: input) }, score: s))
+        }
+    }
+    return q.isEmpty ? out : out.sorted { $0.score > $1.score }
+}
+
+let bookmarks = Box<[Bookmarks.Bookmark]>([])
+let projects = Box<[URL]>([])
+/// Re-reads Helium bookmarks and VS Code recents off the main thread (both small files).
+func refreshBrowserAndProjects() {
+    DispatchQueue.global(qos: .utility).async {
+        let b = Bookmarks.helium(), p = VSCodeRecents.load()
+        DispatchQueue.main.async { bookmarks.value = b; projects.value = p }
+    }
+}
+
+func bookmarkItems(_ q: String) -> [Item] {
+    bookmarks.value.compactMap { b in
+        let host = URL(string: b.url)?.host ?? b.url
+        guard let s = q.isEmpty ? 0 : [Fuzzy.score(q, b.name), Fuzzy.score(q, host)].compactMap({ $0 }).max() else { return nil }
+        return Item(id: "bookmark:" + b.url, title: b.name, subtitle: b.folder.isEmpty ? host : "\(b.folder) · \(host)",
+                    icon: sf("nf-md-bookmark"), run: { if let u = URL(string: b.url) { NSWorkspace.shared.open(u) } }, score: s)
+    }.sorted { $0.score > $1.score }
+}
+
+let vscode = NSWorkspace.shared.urlForApplication(withBundleIdentifier: "com.microsoft.VSCode")
+func projectItems(_ q: String) -> [Item] {
+    let home = NSHomeDirectory()
+    return projects.value.enumerated().compactMap { i, u in
+        let name = u.deletingPathExtension().lastPathComponent
+        guard let s = q.isEmpty ? -i : Fuzzy.score(q, name) else { return nil }
+        let dir = u.deletingLastPathComponent().path
+        let remote = u.isFileURL ? nil : (u.host ?? "remote").replacingOccurrences(of: "ssh-remote+", with: "ssh ")
+        let place = remote.map { "\($0) · \(dir)" } ?? (dir.hasPrefix(home) ? "~" + dir.dropFirst(home.count) : dir)
+        return Item(id: "project:" + u.absoluteString, title: name, subtitle: place,
+                    icon: sf("nf-md-microsoft_visual_studio_code"), run: {
+                        if let vscode, !u.isFileURL {  // remote folders open through VS Code's own CLI
+                            let cli = vscode.appendingPathComponent("Contents/Resources/app/bin/code").path
+                            Shell.run(cli, [u.hasDirectoryPath || u.pathExtension.isEmpty ? "--folder-uri" : "--file-uri", u.absoluteString])
+                        } else if let vscode { NSWorkspace.shared.open([u], withApplicationAt: vscode, configuration: NSWorkspace.OpenConfiguration()) }
+                        else { NSWorkspace.shared.open(u) }
+                    }, score: s)
+    }.sorted { $0.score > $1.score }
+}
+
+let recentFiles = SpotlightList(query: "kMDItemLastUsedDate >= $time.today(-14)", dateAttribute: kMDItemLastUsedDate)
+let screenshots = SpotlightList(query: "kMDItemIsScreenCapture == 1", dateAttribute: kMDItemContentCreationDate, thumbnails: 40)
+
+func spotlightItems(_ list: SpotlightList, _ q: String, glyph: String) -> [Item] {
+    list.refresh(iconSide: theme.iconSize)
+    let home = NSHomeDirectory()
+    return list.entries.compactMap { e in
+        let name = (e.path as NSString).lastPathComponent
+        guard let s = q.isEmpty ? 0 : Fuzzy.score(q, name) else { return nil }
+        let dir = (e.path as NSString).deletingLastPathComponent
+        let when = ago.localizedString(for: e.date, relativeTo: Date())
+        return Item(id: "spot:" + e.path, title: name,
+                    subtitle: "\(when) · " + (dir.hasPrefix(home) ? "~" + dir.dropFirst(home.count) : dir),
+                    icon: list.thumbs[e.path] ?? (list.thumbnails > 0 ? sf(glyph) : NSWorkspace.shared.icon(forFile: e.path)),
+                    run: { NSWorkspace.shared.open(URL(fileURLWithPath: e.path)) }, score: s)
+    }.sorted { q.isEmpty ? false : $0.score > $1.score }
+}
+
+/// "password 32", "pin 6", "lorem 3": the number sets the length.
+func generatorItems(_ q: String) -> [Item] {
+    let parts = q.lowercased().split(separator: " ")
+    let n = parts.count > 1 ? Int(parts[1]) : nil, word = parts.first.map(String.init) ?? ""
+    let sentences = Generators.lorem.split(separator: ".").map { $0.trimmingCharacters(in: .whitespaces) + "." }
+    let all: [(String, String, String)] = [
+        ("UUID", UUID().uuidString.lowercased(), "nf-md-identifier"),
+        ("Password", Generators.password(length: n ?? 20, symbols: true), "nf-md-form_textbox_password"),
+        ("Password (letters and digits)", Generators.password(length: n ?? 20, symbols: false), "nf-md-form_textbox_password"),
+        ("PIN", Generators.pin(n ?? 6), "nf-md-numeric"),
+        ("Lorem Ipsum", sentences.prefix(max(1, min(n ?? 3, sentences.count))).joined(separator: " "), "nf-md-format_paragraph"),
+    ]
+    return all.compactMap { title, value, icon in
+        guard let s = word.isEmpty ? 0 : Fuzzy.score(word, title) else { return nil }
+        return Item(id: "gen:" + title, title: value, subtitle: title + "  ·  ⏎ copies", icon: sf(icon),
+                    run: { Clipboard.copyText(value) }, score: s)
+    }.sorted { $0.score > $1.score }
+}
+
+let procCache = Box<(Date, [Processes.Proc])>((.distantPast, []))
+/// Name search, or ":3000" for whatever listens on that TCP port.
+func processItems(_ q: String) -> [Item] {
+    if Date().timeIntervalSince(procCache.value.0) > 2 { procCache.value = (Date(), Processes.list()) }
+    let port = q.hasPrefix(":") ? Int(q.dropFirst()) : nil
+    let pids = port.map(Processes.listening(port:))
+    return procCache.value.1.compactMap { p in
+        if let pids { guard pids.contains(p.pid) else { return nil } }
+        guard p.pid != getpid(), let s = (q.isEmpty || pids != nil) ? 0 : Fuzzy.score(q, p.name) else { return nil }
+        return Item(id: "proc:\(p.pid)", title: p.name, subtitle: String(format: "pid %d · %.1f%% CPU · %d MB", p.pid, p.cpu, p.memMB),
+                    accessory: "›", icon: sf("nf-md-chip"), score: s, submenu: {
+            Mode(prompt: "Stop \(p.name)?") { _ in [
+                Item(id: "proc:term", title: "Quit (SIGTERM)", icon: sf("nf-md-close_circle"), run: { kill(p.pid, SIGTERM) }),
+                Item(id: "proc:kill", title: "Kill (SIGKILL)", subtitle: "unsaved work is lost", icon: sf("nf-md-skull"),
+                     run: { kill(p.pid, SIGKILL) }),
+                Item(id: "proc:no", title: "Cancel", icon: sf("nf-md-close")),
+            ] }
+        })
+    }.sorted { $0.score > $1.score }
+}
+
 /// Built-in modes for `fener show <name>` and `menu = "<name>"`; a user menu with the same name wins.
 func builtinMode(_ name: String) -> Mode? { builtins[name] }
 let builtins: [String: Mode] = [
@@ -328,6 +464,14 @@ let builtins: [String: Mode] = [
     "clipboard": Mode(prompt: "Clipboard…", search: clipboardItems),
     "quit": Mode(prompt: "Quit…", search: quitItems),
     "snippets": Mode(prompt: "Snippets…", search: snippetItems),
+    "settings": Mode(prompt: "Settings…", search: settingsItems),
+    "audio": Mode(prompt: "Audio…", search: audioItems),
+    "bookmarks": Mode(prompt: "Bookmarks…", width: 560, search: bookmarkItems),
+    "projects": Mode(prompt: "Projects…", width: 480, search: projectItems),
+    "recent": Mode(prompt: "Recent Files…", width: 560) { spotlightItems(recentFiles, $0, glyph: "nf-md-file_clock") },
+    "screenshots": Mode(prompt: "Screenshots…", width: 560) { spotlightItems(screenshots, $0, glyph: "nf-md-image") },
+    "generate": Mode(prompt: "Generate…", width: 560, search: generatorItems),
+    "processes": Mode(prompt: "Processes… (:port)", width: 480, search: processItems),
     "dictionary": Mode(prompt: "Define…", width: 600, search: definitionItems),
     "system": Mode(prompt: "System…", search: systemItems),
     "emoji": Mode(prompt: "Emoji…", search: emojiItems),
@@ -404,6 +548,21 @@ func problemItems() -> [Item] {
     }
 }
 
+/// An alias typed exactly: opens its menu or built-in view, or launches the app of that name.
+func aliasItem(_ word: String, _ target: String) -> Item? {
+    if let m = menus.menus[target] {
+        return Item(id: "alias:" + word, title: Menu.title(m.name), subtitle: "alias \(word)", accessory: "›",
+                    icon: sf(m.icon.isEmpty ? "nf-md-format_list_bulleted" : m.icon), score: 20_000, submenu: { menuMode(m) })
+    }
+    if let b = builtinMode(target) {
+        return Item(id: "alias:" + word, title: Menu.title(target), subtitle: "alias \(word)", accessory: "›",
+                    icon: sf("nf-md-format_list_bulleted"), score: 20_000, submenu: { b })
+    }
+    guard var app = apps.search(target).first else { return nil }
+    app.subtitle = "alias \(word)"; app.score = 20_000
+    return app
+}
+
 /// The menu listed while the search is empty (config `home`), if it exists as a TOML menu.
 var homeMenu: Menu? {
     guard !config.home.isEmpty, let m = menus.menus[config.home], m.executable == nil else { return nil }
@@ -420,6 +579,7 @@ let root = Mode(prompt: "Search…", dynamicWidth: { homeMenu?.width }) { raw in
     }
     // Windows rank a bit below apps and menus: long titles match short queries by accident.
     var top: [Item] = [], links: [Item] = []
+    if let target = config.aliases[raw.lowercased().trimmingCharacters(in: .whitespaces)], let a = aliasItem(raw, target) { top.append(a) }
     if let a = answerItem(raw, forced: false) { top.append(a) }
     // "define <word>": a row that opens the wide dictionary view for that word.
     if raw.lowercased().hasPrefix("define "), case let w = String(raw.dropFirst(7)).trimmingCharacters(in: .whitespaces), !w.isEmpty {
@@ -434,6 +594,11 @@ let root = Mode(prompt: "Search…", dynamicWidth: { homeMenu?.width }) { raw in
     }
     let merged = merge(apps.search(raw), searchMenus(raw, entries: true), systemItems(raw), links,
                        snippetItems(raw).map { var i = $0; i.score -= 2; i.subtitle = "snippet"; return i },
+                       settingsItems(raw).map { var i = $0; i.score -= 3; return i },
+                       projectItems(raw).map { var i = $0; i.score -= 4; i.subtitle = "VS Code · " + i.subtitle; return i },
+                       bookmarkItems(raw).map { var i = $0; i.score -= 6; return i },
+                       // Generators only for a clear word ("uuid", "password 24"), not stray letters.
+                       (raw.count >= 3 ? generatorItems(raw) : []).filter { $0.score > 40 }.map { var i = $0; i.score -= 5; return i },
                        windows.search(raw, all: false).map { var i = $0; i.score -= 10; return i })
     // Last row: search the web with the default engine (it only opens the browser).
     let web = quicklinks.defaultEngine.map { [linkItem($0, raw, score: Int.min)] } ?? []
@@ -442,7 +607,7 @@ let root = Mode(prompt: "Search…", dynamicWidth: { homeMenu?.width }) { raw in
 
 func makeLauncher() -> Launcher {
     let l = Launcher(theme: theme, root: root)
-    l.onShow = { apps.refresh(); windows.refresh(); menus.load(); snippets.load() }
+    l.onShow = { apps.refresh(); windows.refresh(); menus.load(); snippets.load(); refreshBrowserAndProjects() }
     l.prewarm()
     return l
 }
@@ -458,6 +623,9 @@ var launcher = makeLauncher()
 windows.onChange = { launcher.refilter() }
 files.onChange = { launcher.refilter() }
 rates.onChange = { launcher.refilter() }
+recentFiles.onChange = { launcher.refilter() }
+screenshots.onChange = { launcher.refilter() }
+refreshBrowserAndProjects()
 windows.refresh()
 
 try? FileManager.default.createDirectory(at: configDir, withIntermediateDirectories: true)

@@ -7,6 +7,11 @@ icon = "nf-md-apps"
 menu = "apps"
 
 [[entry]]
+name = "Find"
+icon = "nf-md-magnify"
+menu = "find"
+
+[[entry]]
 name = "Learn"
 icon = "nf-md-brain"
 menu = "learn"

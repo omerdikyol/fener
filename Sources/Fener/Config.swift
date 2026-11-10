@@ -15,6 +15,9 @@ import AppKit
 ///     menus = ">"
 ///     windows = ";"
 ///
+///     [currency]                     # ECB daily rates, fetched only when a conversion is typed
+///     enabled = true
+///
 ///     [clipboard]
 ///     enabled = true
 ///     max_items = 200
@@ -27,6 +30,7 @@ struct Config {
     var clipboardEnabled = true
     var clipboardMaxItems = 200
     var clipboardMaxItemBytes = 5_000_000
+    var currencyEnabled = true
 
     /// Parses config text; `problems` collects errors and warnings worth showing to the user.
     static func parse(_ text: String, problems: inout [String]) -> Config {
@@ -60,6 +64,12 @@ struct Config {
                     case ("enabled", _), ("max_items", _), ("max_item_bytes", _): warn("clipboard.\(name) has a wrong type or value")
                     default: warn("unknown key clipboard.\(name)")
                     }
+                }
+            case "currency":
+                guard let p = v as? [String: Any] else { warn("[currency] must be a table"); continue }
+                for (name, value) in p {
+                    if name == "enabled", let b = value as? Bool { c.currencyEnabled = b }
+                    else { warn(name == "enabled" ? "currency.enabled must be true or false" : "unknown key currency.\(name)") }
                 }
             default: warn("unknown key \(k)")
             }

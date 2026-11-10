@@ -1,0 +1,13 @@
+# fener quicklinks: ~/.config/fener/quicklinks.toml
+# Type "<keyword> <query>" to open the URL in your default browser. {query} is URL-encoded.
+# Built in: d (DuckDuckGo, the default), g (Google), k (Kagi), gh (GitHub), yt (YouTube),
+# wiki (Wikipedia), maps (Apple Maps). A link with the same keyword replaces a built-in one.
+
+# Engine for the "Search … for" row at the bottom of every search: a keyword.
+default = "d"
+
+# [[link]]
+# keyword = "eksi"
+# name = "Ekşi Sözlük"
+# url = "https://eksisozluk.com/?q={query}"
+# icon = "nf-md-web"

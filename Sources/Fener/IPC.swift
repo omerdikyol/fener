@@ -3,7 +3,7 @@ import Foundation
 /// Line protocol over a Unix domain socket: the client sends "command args\n",
 /// the app answers "ok\n" or "error: …\n" and closes. Socket is mode 0600 in the cache dir.
 enum IPC {
-    static let commands: Set = ["toggle", "show", "hide", "reload", "ping", "query"]
+    static let commands: Set = ["toggle", "show", "hide", "reload", "ping", "query", "pick-color"]
 
     static var socketPath: String {
         let dir = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)[0].appendingPathComponent("fener")

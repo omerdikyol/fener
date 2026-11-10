@@ -141,9 +141,82 @@ DispatchQueue.global(qos: .utility).async { _ = Emoji.all.count }  // build the 
 
 func sf(_ name: String) -> NSImage? { Icons.named(name, theme: theme) }
 
-func calcItem(_ a: Calc.Answer) -> Item {
-    Item(id: "calc", title: a.value, subtitle: a.detail + "  ·  ⏎ copies", icon: sf("nf-md-calculator"),
+func calcItem(_ a: Calc.Answer, icon: String = "nf-md-calculator") -> Item {
+    Item(id: "calc", title: a.value, subtitle: a.detail + "  ·  ⏎ copies", icon: sf(icon),
          run: { Clipboard.copyText(a.value) }, score: 10_000)
+}
+
+let rates = Currency(cacheDir: cacheDir)
+
+/// "100 usd to try" with ECB rates; fetches them (at most daily) only when asked.
+func currencyItem(_ s: String) -> Item? {
+    guard config.currencyEnabled, let q = Currency.query(s.lowercased()), let amount = Calc.evaluate(q.amount) else { return nil }
+    rates.refreshIfStale()
+    guard let v = rates.convert(amount, from: q.from, to: q.to) else {
+        return Item(id: "calc", title: rates.rates.isEmpty ? "Fetching exchange rates…" : "No rate for \(q.from) or \(q.to)",
+                    subtitle: "ECB reference rates", icon: sf("nf-md-cash_multiple"), score: 10_000)
+    }
+    let value = abs(v) >= 1 ? String(format: "%.2f", v) : String(format: "%.4g", v)
+    return calcItem(Calc.Answer(value: value, detail: "\(Calc.format(amount)) \(q.from) → \(q.to) · ECB \(rates.date)"),
+                    icon: "nf-md-cash_multiple")
+}
+
+/// Calculator, currency, then time and dates: the first that understands the input.
+func answerItem(_ s: String, forced: Bool) -> Item? {
+    if let a = Calc.answer(s, forced: forced) { return calcItem(a) }
+    if let c = currencyItem(s) { return c }
+    if let a = TimeCalc.answer(s) { return calcItem(a, icon: "nf-md-calendar_clock") }
+    return nil
+}
+
+var quicklinks = Quicklinks()
+
+func linkItem(_ link: Quicklink, _ q: String, score: Int) -> Item {
+    Item(id: "link:" + link.keyword, title: q.isEmpty ? link.name : "Search \(link.name) for “\(q)”",
+         subtitle: q.isEmpty ? "\(link.keyword) <query>" : link.keyword, icon: sf(link.icon),
+         run: { if let u = link.url(for: q) { NSWorkspace.shared.open(u) } }, score: score)
+}
+
+// MARK: running apps and colors
+
+func quitItems(_ q: String) -> [Item] {
+    NSWorkspace.shared.runningApplications.compactMap { app in
+        guard app.activationPolicy == .regular, app != NSRunningApplication.current, let name = app.localizedName,
+              let s = q.isEmpty ? 0 : Fuzzy.score(q, name) else { return nil }
+        return Item(id: "quit:\(app.processIdentifier)", title: name, accessory: "›", icon: app.icon, score: s, submenu: {
+            Mode(prompt: "Quit \(name)?") { _ in [
+                Item(id: "quit:yes", title: "Quit", icon: sf("nf-md-close_circle"), run: { app.terminate() }),
+                Item(id: "quit:force", title: "Force Quit", subtitle: "unsaved changes are lost", icon: sf("nf-md-alert"),
+                     run: { app.forceTerminate() }),
+                Item(id: "quit:no", title: "Cancel", icon: sf("nf-md-close")),
+            ] }
+        })
+    }.sorted { $0.score != $1.score ? $0.score > $1.score : $0.title.localizedCaseInsensitiveCompare($1.title) == .orderedAscending }
+}
+
+/// Opens the system color sampler; the picked color's hex is copied, and the panel lists
+/// it as HEX, RGB and HSL to copy another format.
+func pickColor() {
+    launcher.hide()
+    NSColorSampler().show { picked in
+        guard let c = picked?.usingColorSpace(.sRGB) else { return }
+        let r = Int((c.redComponent * 255).rounded()), g = Int((c.greenComponent * 255).rounded()), b = Int((c.blueComponent * 255).rounded())
+        let hex = String(format: "#%02x%02x%02x", r, g, b)
+        Clipboard.copyText(hex)
+        var h: CGFloat = 0, s: CGFloat = 0, br: CGFloat = 0, a: CGFloat = 0
+        c.getHue(&h, saturation: &s, brightness: &br, alpha: &a)
+        let l = (2 - s) * br / 2, sl = l > 0 && l < 1 ? s * br / (1 - abs(2 * l - 1)) : 0
+        let swatch = NSImage(size: NSSize(width: 18, height: 18), flipped: false) { rect in
+            c.setFill(); NSBezierPath(roundedRect: rect, xRadius: 4, yRadius: 4).fill(); return true
+        }
+        let formats = [hex, "rgb(\(r), \(g), \(b))",
+                       String(format: "hsl(%.0f, %.0f%%, %.0f%%)", h * 360, sl * 100, l * 100)]
+        launcher.show(Mode(prompt: "Color…") { _ in
+            formats.enumerated().map { i, f in
+                Item(id: "color:\(i)", title: f, subtitle: i == 0 ? "copied" : "", icon: swatch, run: { Clipboard.copyText(f) })
+            }
+        })
+    }
 }
 
 func confirm(_ a: SystemAction) -> Mode {
@@ -154,12 +227,21 @@ func confirm(_ a: SystemAction) -> Mode {
 }
 
 func systemItems(_ q: String) -> [Item] {
-    SystemAction.all.compactMap { a in
+    let actions: [Item] = SystemAction.all.compactMap { a in
         guard let s = q.isEmpty ? 0 : Fuzzy.score(q, a.name) else { return nil }
         var item = Item(id: "system:" + a.name, title: a.name, subtitle: a.subtitle, icon: sf(a.icon), score: s)
         if a.confirm { item.submenu = { confirm(a) }; item.accessory = "›" } else { item.run = a.run }
         return item
     }
+    let extra = [
+        Item(id: "system:quit", title: "Quit Apps", subtitle: "system", accessory: "›", icon: sf("nf-md-application_cog"),
+             submenu: { builtins["quit"]! }),
+        Item(id: "system:color", title: "Pick Color", subtitle: "system", icon: sf("nf-md-eyedropper"), run: pickColor),
+    ].compactMap { i -> Item? in
+        guard let s = q.isEmpty ? 0 : Fuzzy.score(q, i.title) else { return nil }
+        var i = i; i.score = s; return i
+    }
+    return actions + extra
 }
 
 let ago = { () -> RelativeDateTimeFormatter in let f = RelativeDateTimeFormatter(); f.unitsStyle = .abbreviated; return f }()
@@ -214,6 +296,7 @@ func builtinMode(_ name: String) -> Mode? { builtins[name] }
 let builtins: [String: Mode] = [
     "apps": Mode(prompt: "Apps…", search: apps.search),
     "clipboard": Mode(prompt: "Clipboard…", search: clipboardItems),
+    "quit": Mode(prompt: "Quit…", search: quitItems),
     "system": Mode(prompt: "System…", search: systemItems),
     "emoji": Mode(prompt: "Emoji…", search: emojiItems),
     "files": Mode(prompt: "Files…", search: files.search),
@@ -238,6 +321,8 @@ func loadSettings() -> (Config, Theme, [String]) {
     } else if c.theme != "tokyo-night" {
         p.append("config.toml: theme \(c.theme) not found in \(themeURL.deletingLastPathComponent().path); using tokyo-night")
     }
+    let qlURL = configDir.appendingPathComponent("quicklinks.toml")
+    quicklinks = (try? String(contentsOf: qlURL, encoding: .utf8)).map { Quicklinks.parse($0, problems: &p) } ?? Quicklinks()
     if !Icons.fontHasNerdGlyphs(th) {
         p.append("themes/\(c.theme).toml: font \"\(th.fontFamily)\" has no Nerd Font glyphs; menu icons show as dots")
     }
@@ -266,7 +351,7 @@ func applySettings() {
 
 var prefixes: [(String, (String) -> [Item])] {
     let all: [(String, (String) -> [Item])] = [
-        ("calc", { q in Calc.answer(q, forced: true).map { [calcItem($0)] } ?? [] }),
+        ("calc", { q in answerItem(q, forced: true).map { [$0] } ?? [] }),
         ("files", files.search),
         ("emoji", emojiItems),
         ("clipboard", { config.clipboardEnabled ? clipboardItems($0) : [] }),
@@ -300,9 +385,16 @@ let root = Mode(prompt: "Search…", dynamicWidth: { homeMenu?.width }) { raw in
         return problemItems() + rank(m.entries, "").map { entryItem($0.0, of: m, score: $0.1) }
     }
     // Windows rank a bit below apps and menus: long titles match short queries by accident.
-    let merged = merge(apps.search(raw), searchMenus(raw, entries: true), systemItems(raw),
+    var top: [Item] = [], links: [Item] = []
+    if let a = answerItem(raw, forced: false) { top.append(a) }
+    if let (link, q) = quicklinks.match(raw) {
+        if q.isEmpty { links.append(linkItem(link, "", score: 0)) } else { top.append(linkItem(link, q, score: 10_000)) }
+    }
+    let merged = merge(apps.search(raw), searchMenus(raw, entries: true), systemItems(raw), links,
                        windows.search(raw, all: false).map { var i = $0; i.score -= 10; return i })
-    return (Calc.answer(raw).map { [calcItem($0)] } ?? []) + merged
+    // Last row: search the web with the default engine (it only opens the browser).
+    let web = quicklinks.defaultEngine.map { [linkItem($0, raw, score: Int.min)] } ?? []
+    return top + merged + web
 }
 
 func makeLauncher() -> Launcher {
@@ -322,6 +414,7 @@ do {
 var launcher = makeLauncher()
 windows.onChange = { launcher.refilter() }
 files.onChange = { launcher.refilter() }
+rates.onChange = { launcher.refilter() }
 windows.refresh()
 
 try? FileManager.default.createDirectory(at: configDir, withIntermediateDirectories: true)
@@ -363,6 +456,7 @@ let server = IPC.Server(path: IPC.socketPath) { words in
         apps.refresh(); applySettings()
         if !problems.isEmpty { return "error: " + problems.joined(separator: "; ") }
     case "ping": break
+    case "pick-color": pickColor()
     case "query":  // prints what the launcher would list: id, title, subtitle (tab-separated)
         let rows = root.search(words.dropFirst().joined(separator: " ")).prefix(20)
         return (["ok"] + rows.map { "\($0.id)\t\($0.title)\t\($0.subtitle)" }).joined(separator: "\n")

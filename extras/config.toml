@@ -16,6 +16,12 @@ clipboard = "*"
 menus = ">"
 windows = ";"
 
+# Currency conversion ("100 usd to try") uses the European Central Bank's daily reference
+# rates. fener downloads that public file only when you type a conversion and its copy is
+# more than a day old. false: never.
+[currency]
+enabled = true
+
 [clipboard]
 enabled = true
 max_items = 200

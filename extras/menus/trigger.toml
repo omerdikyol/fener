@@ -16,6 +16,12 @@ icon = "nf-md-clipboard_text"
 menu = "clipboard"
 
 [[entry]]
+name = "Color Picker"
+subtitle = "copies the hex"
+icon = "nf-md-eyedropper"
+command = "fener pick-color"
+
+[[entry]]
 name = "Capture"
 icon = "nf-fa-camera"
 menu = "capture"

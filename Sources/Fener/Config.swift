@@ -4,6 +4,7 @@ import AppKit
 ///
 ///     theme = "tokyo-night"          # themes/<name>.toml, or the built-in tokyo-night
 ///     home = "menu"                  # menu shown while the search is empty; "" = app list
+///     learn_queries = true           # rank rows you picked for the same text first; Recently Used
 ///     terminal = "open -na Ghostty --args --command={} --quit-after-last-window-closed=true"
 ///                                    # how `terminal = true` menu entries run; {} = the command
 ///
@@ -31,6 +32,7 @@ import AppKit
 ///     ignore_apps = ["com.1password.1password"]   # bundle ids or names: never recorded
 struct Config {
     var theme = "tokyo-night"
+    var learnQueries = true   // learn which row is picked for which typed text; Recently Used
     var home = "menu"   // menu listed while the search is empty; "" lists apps instead
     var terminal = "open -na Ghostty --args --command={} --quit-after-last-window-closed=true"
     var prefixes: [String: String] = ["calc": "=", "files": "/", "emoji": ":", "clipboard": "*", "menus": ">", "windows": ";", "snippets": "!"]
@@ -53,6 +55,8 @@ struct Config {
             switch k {
             case "theme":
                 if let s = v as? String { c.theme = s } else { warn("theme must be a string") }
+            case "learn_queries":
+                if let b = v as? Bool { c.learnQueries = b } else { warn("learn_queries must be true or false") }
             case "home":
                 if let s = v as? String { c.home = s } else { warn("home must be a string") }
             case "terminal":

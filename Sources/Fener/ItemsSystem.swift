@@ -73,6 +73,12 @@ func systemItems(_ q: String) -> [Item] {
         view("Generate (UUID, password, lorem)", "nf-md-dice_multiple", "generate"),
         view("Bookmarks", "nf-md-bookmark", "bookmarks"),
         view("VS Code Projects", "nf-md-microsoft_visual_studio_code", "projects"),
+        view("Recently Used", "nf-md-history", "used"),
+        Item(id: "system:forget", title: "Forget Search History", subtitle: "learned searches and Recently Used",
+             accessory: "›", icon: sf("nf-md-delete_clock"),
+             submenu: { confirm(SystemAction(name: "Forget Search History", subtitle: "", icon: "nf-md-delete_clock", confirm: true) {
+                 learning.forget()
+             }) }),
     ].compactMap { i -> Item? in
         if q.isEmpty, !inSystemView.contains(i.id) { return nil }
         guard let s = q.isEmpty ? 0 : Fuzzy.score(q, i.title) else { return nil }

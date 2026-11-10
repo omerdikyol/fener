@@ -51,7 +51,9 @@ final class Launcher: NSObject, NSWindowDelegate, NSTableViewDataSource, NSTable
     /// The open menu, if one is open above the root (kept across a theme rebuild).
     var openMenu: Mode? { stack.count > 1 ? stack.last : nil }
     var onShow: () -> Void = {}
-    var onPick: (Item) -> Void = { _ in }   // a row was run or opened (usage tracking)
+    /// A row was run or opened; the text is what was typed in the main search (nil inside a menu).
+    var onPick: (Item, String?) -> Void = { _, _ in }
+    private var rootQuery: String? { stack.count == 1 ? field.stringValue : nil }
 
     // Vertical metrics: padding, search line, gap, list, padding.
     private var pad: CGFloat { theme.padding }
@@ -282,7 +284,7 @@ final class Launcher: NSObject, NSWindowDelegate, NSTableViewDataSource, NSTable
         guard items.indices.contains(table.selectedRow) else { return }
         let item = items[table.selectedRow]
         guard let list = item.actions?(), !list.isEmpty else { return }
-        onPick(item)
+        onPick(item, rootQuery)
         push(Mode(prompt: "\(item.title)…") { q in
             list.filter { q.isEmpty || Fuzzy.score(q, $0.title) != nil }
         })
@@ -291,7 +293,7 @@ final class Launcher: NSObject, NSWindowDelegate, NSTableViewDataSource, NSTable
     /// Cmd+Return: the selected row's first action.
     private func runFirstAction() {
         guard items.indices.contains(table.selectedRow), let a = items[table.selectedRow].actions?().first else { return }
-        onPick(items[table.selectedRow])
+        onPick(items[table.selectedRow], rootQuery)
         if let sub = a.submenu { push(sub()); return }
         hide()
         a.run()
@@ -300,7 +302,7 @@ final class Launcher: NSObject, NSWindowDelegate, NSTableViewDataSource, NSTable
     private func run(_ row: Int) {
         guard items.indices.contains(row) else { return }
         let item = items[row]
-        onPick(item)
+        onPick(item, rootQuery)
         if let sub = item.submenu { push(sub()); return }
         hide()
         item.run()

@@ -1,6 +1,11 @@
 width = 320
 
 [[entry]]
+name = "Recently Used"
+icon = "nf-md-history"
+menu = "used"
+
+[[entry]]
 name = "Files"
 icon = "nf-md-file_search"
 menu = "files"

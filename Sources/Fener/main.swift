@@ -51,6 +51,7 @@ do {
     let (c, th, p) = loadSettings()
     config = c; theme = th; problems = p + menus.errors
     configureClipboard(c)
+    learning.enabled = c.learnQueries
 }
 _ = launcher  // build and pre-warm the panel now (globals are lazy), after settings are loaded
 windows.onChange = { launcher.refilter() }

@@ -105,7 +105,7 @@ final class ConfigTests: XCTestCase {
             XCTAssertNoThrow(try Menu.parse(name: f, toml: String(contentsOf: menuDir.appendingPathComponent(f), encoding: .utf8)), f)
         }
         // Every submenu a shipped menu points at exists, as a file or a built-in.
-        let builtins: Set = ["apps", "clipboard", "emoji", "files", "system", "windows", "calc", "quit", "snippets", "dictionary", "settings", "audio", "bookmarks", "projects", "recent", "screenshots", "generate", "processes"]
+        let builtins: Set = ["apps", "clipboard", "emoji", "files", "system", "windows", "calc", "quit", "snippets", "dictionary", "settings", "audio", "bookmarks", "projects", "recent", "screenshots", "generate", "processes", "used"]
         for f in try fm.contentsOfDirectory(atPath: menuDir.path) where f.hasSuffix(".toml") {
             let m = try Menu.parse(name: f, toml: String(contentsOf: menuDir.appendingPathComponent(f), encoding: .utf8))
             for e in m.entries where !e.menu.isEmpty {

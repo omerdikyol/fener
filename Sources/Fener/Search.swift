@@ -7,6 +7,7 @@ let builtins: [String: Mode] = [
     "clipboard": Mode(prompt: "Clipboard…", search: clipboardItems),
     "quit": Mode(prompt: "Quit…", search: quitItems),
     "snippets": Mode(prompt: "Snippets…", search: snippetItems),
+    "used": Mode(prompt: "Recently Used…", width: 480, search: recentItems),
     "settings": Mode(prompt: "Settings…", search: settingsItems),
     "audio": Mode(prompt: "Audio…", search: audioItems),
     "bookmarks": Mode(prompt: "Bookmarks…", width: 560, search: bookmarkItems),
@@ -67,6 +68,26 @@ func minimumScore(_ query: String) -> Int {
     18 * min(8, query.filter { $0 != " " }.count)
 }
 
+/// Rows worth keeping in Recently Used and learning from: anything but changing values,
+/// problems and the action/confirm rows themselves. Apps count here.
+func remembered(_ id: String) -> Bool {
+    !id.isEmpty && !["calc", "gen:", "color:", "define", "confirm:", "problem:", "action:", "quit:", "proc:", "link:", "alias:"]
+        .contains(where: { id.hasPrefix($0) })
+}
+
+/// Recently Used: the last picks, looked up again in the current sources (an app by its
+/// path, anything else through the main search by title). Rows that no longer exist are skipped.
+func recentItems(_ q: String) -> [Item] {
+    learning.recent.compactMap { r -> Item? in
+        guard q.isEmpty || Fuzzy.score(q, r.title) != nil else { return nil }
+        let found = r.id.hasPrefix("/") ? apps.search(r.title).first { $0.id == r.id }
+                                        : root.search(r.title).first { $0.id == r.id }
+        guard var item = found else { return nil }
+        item.subtitle = ago.localizedString(for: Date(timeIntervalSince1970: r.time), relativeTo: Date())
+        return item
+    }
+}
+
 /// Ids worth remembering: not changing values (calculator, generated passwords) and not
 /// apps, which keep their own launch counts.
 func tracked(_ id: String) -> Bool {
@@ -111,14 +132,15 @@ let root = Mode(prompt: "Search…", dynamicWidth: { homeMenu?.width }) { raw in
     // Apps compete on their own; every other source must clear a quality bar and then gets
     // the same usage boost apps have, so rows you pick often rise.
     func other(_ items: [Item], penalty: Int, subtitle: ((String) -> String)? = nil) -> [Item] {
-        items.filter { $0.score >= minimumScore(raw) }.map { i in
+        items.filter { $0.score >= minimumScore(raw) || learned[$0.id] != nil }.map { i in
             var i = i
-            i.score += usageBoost(i.id) - penalty
+            i.score += usageBoost(i.id) + (learned[i.id] ?? 0) - penalty
             if let subtitle { i.subtitle = subtitle(i.subtitle) }
             return i
         }
     }
-    let merged = merge(apps.search(raw), links,
+    let learned = learning.boosts(for: raw)
+    let merged = merge(apps.search(raw).map { var i = $0; i.score += learned[i.id] ?? 0; return i }, links,
                        other(searchMenus(raw, entries: true), penalty: 0),
                        other(systemItems(raw), penalty: 0),
                        other(snippetItems(raw), penalty: 2, subtitle: { _ in "snippet" }),

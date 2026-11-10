@@ -54,6 +54,7 @@ do {
     learning.enabled = c.learnQueries
 }
 _ = launcher  // build and pre-warm the panel now (globals are lazy), after settings are loaded
+configureBehavior(config)
 windows.onChange = { launcher.refilter() }
 files.onChange = { launcher.refilter() }
 rates.onChange = { launcher.refilter() }

@@ -91,6 +91,10 @@ final class ConfigTests: XCTestCase {
         XCTAssertEqual(theme, Theme())
         let c = Config.parse(try String(contentsOf: root.appendingPathComponent("extras/config.toml"), encoding: .utf8), problems: &p)
         XCTAssertEqual(c.prefixes, Config().prefixes)
+        let d = Config()
+        XCTAssertEqual([c.panelPosition, c.panelScreen, c.browser, c.editor, c.terminalApp], [d.panelPosition, d.panelScreen, d.browser, d.editor, d.terminalApp])
+        XCTAssertEqual(c.sources, d.sources)
+        XCTAssertEqual([c.fileLimit, c.recentDays, c.screenshotThumbnails, c.animationMs], [d.fileLimit, d.recentDays, d.screenshotThumbnails, d.animationMs])
         XCTAssertEqual(p, [])
     }
 
@@ -105,7 +109,7 @@ final class ConfigTests: XCTestCase {
             XCTAssertNoThrow(try Menu.parse(name: f, toml: String(contentsOf: menuDir.appendingPathComponent(f), encoding: .utf8)), f)
         }
         // Every submenu a shipped menu points at exists, as a file or a built-in.
-        let builtins: Set = ["apps", "clipboard", "emoji", "files", "system", "windows", "calc", "quit", "snippets", "dictionary", "settings", "audio", "bookmarks", "projects", "recent", "screenshots", "generate", "processes", "used"]
+        let builtins: Set = ["apps", "clipboard", "emoji", "files", "system", "windows", "calc", "quit", "snippets", "dictionary", "settings", "audio", "bookmarks", "projects", "recent", "screenshots", "generate", "processes", "used", "preferences"]
         for f in try fm.contentsOfDirectory(atPath: menuDir.path) where f.hasSuffix(".toml") {
             let m = try Menu.parse(name: f, toml: String(contentsOf: menuDir.appendingPathComponent(f), encoding: .utf8))
             for e in m.entries where !e.menu.isEmpty {
@@ -125,5 +129,30 @@ final class ConfigTests: XCTestCase {
         XCTAssertTrue(m.entries[0].terminal && m.entries[0].confirm)
         XCTAssertThrowsError(try Menu.parse(name: "m", toml: "width = 50"))
         XCTAssertThrowsError(try Menu.parse(name: "m", toml: "[[entry]]\nname = \"a\"\ncommand = \"x\"\nterminal = \"yes\""))
+    }
+
+    func testNewSectionsValidate() {
+        var p: [String] = []
+        let c = Config.parse("""
+        [panel]
+        position = "top"
+        screen = "sideways"
+        animation_ms = 5000
+        [search]
+        sources = ["apps", "bookmarks", "nope"]
+        [apps]
+        editor = "cursor"
+        terminal = ""
+        [learning]
+        usage_half_life_days = 3.5
+        """, problems: &p)
+        XCTAssertEqual(c.panelPosition, "top")
+        XCTAssertEqual(c.panelScreen, "mouse")         // invalid keeps the default
+        XCTAssertEqual(c.animationMs, 120)
+        XCTAssertEqual(c.sources, ["apps", "bookmarks"])
+        XCTAssertEqual(c.editor, "cursor")
+        XCTAssertEqual(c.terminalApp, "Ghostty")
+        XCTAssertEqual(c.usageHalfLifeDays, 3.5)
+        XCTAssertEqual(p.count, 4)                     // screen, animation_ms, unknown source, empty terminal
     }
 }

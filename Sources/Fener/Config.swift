@@ -30,6 +30,33 @@ import AppKit
 ///     max_item_bytes = 5000000
 ///     keep_days = 30                 # older items are deleted
 ///     ignore_apps = ["com.1password.1password"]   # bundle ids or names: never recorded
+///
+///     [panel]
+///     position = "center"            # center | upper | top
+///     screen = "mouse"               # mouse | focused (the front window's) | main (with the menu bar)
+///     close_on_blur = true           # hide when another window takes focus
+///     animation = true
+///     animation_ms = 120             # open; closing takes two thirds of it
+///
+///     [search]                       # what the main search lists besides apps' own prefixes
+///     sources = ["apps", "menus", "system", "snippets", "settings", "projects", "generators", "bookmarks", "windows"]
+///     web_fallback = true            # the "Search <engine> for …" row at the bottom
+///
+///     [files]
+///     roots = ["~"]                  # where file search and Recent Files look
+///     limit = 60
+///     recent_days = 14
+///     screenshot_thumbnails = 40
+///
+///     [apps]
+///     folders = ["/Applications", "/System/Applications", "~/Applications"]
+///     browser = "helium"             # bookmarks: helium | chrome | brave | arc | edge | vivaldi | chromium | none
+///     editor = "vscode"              # projects and Edit actions: vscode | cursor | vscodium | windsurf | textedit
+///     terminal = "Ghostty"           # "Open in Terminal" actions: an app name
+///
+///     [learning]
+///     usage_half_life_days = 7       # how fast picks stop counting
+///     search_half_life_days = 14     # how fast learned searches fade
 struct Config {
     var theme = "tokyo-night"
     var learnQueries = true   // learn which row is picked for which typed text; Recently Used
@@ -43,6 +70,37 @@ struct Config {
     var clipboardIgnoreApps: [String] = []
     var currencyEnabled = true
     var aliases: [String: String] = [:]   // typed word -> menu, built-in view or app name
+
+    // [panel]
+    var panelPosition = "center"
+    var panelScreen = "mouse"
+    var closeOnBlur = true
+    var animation = true
+    var animationMs = 120
+    // [search]
+    static let allSources = ["apps", "menus", "system", "snippets", "settings", "projects", "generators", "bookmarks", "windows"]
+    var sources = Set(Config.allSources)
+    var webFallback = true
+    // [files]
+    var fileRoots = ["~"]
+    var fileLimit = 60
+    var recentDays = 14
+    var screenshotThumbnails = 40
+    // [apps]
+    var appFolders = ["/Applications", "/System/Applications", "~/Applications"]
+    var browser = "helium"
+    var editor = "vscode"
+    var terminalApp = "Ghostty"
+    // [learning]
+    var usageHalfLifeDays = 7.0
+    var searchHalfLifeDays = 14.0
+
+    static let choices: [String: [String]] = [
+        "panel.position": ["center", "upper", "top"],
+        "panel.screen": ["mouse", "focused", "main"],
+        "apps.browser": ["helium", "chrome", "brave", "arc", "edge", "vivaldi", "chromium", "none"],
+        "apps.editor": ["vscode", "cursor", "vscodium", "windsurf", "textedit"],
+    ]
 
     /// Parses config text; `problems` collects errors and warnings worth showing to the user.
     static func parse(_ text: String, problems: inout [String]) -> Config {
@@ -88,6 +146,9 @@ struct Config {
                     if let s = value as? String, !s.isEmpty { c.aliases[name.lowercased()] = s }
                     else { warn("aliases.\(name) must be a menu, view or app name") }
                 }
+            case "panel", "search", "files", "apps", "learning":
+                guard let p = v as? [String: Any] else { warn("[\(k)] must be a table"); continue }
+                for (name, value) in p { c.set(section: k, name, value, warn) }
             case "currency":
                 guard let p = v as? [String: Any] else { warn("[currency] must be a table"); continue }
                 for (name, value) in p {
@@ -101,6 +162,65 @@ struct Config {
         if Set(used).count != used.count { warn("two prefixes are the same") }
         return c
     }
+}
+
+extension Config {
+    /// One key of the [panel], [search], [files], [apps] or [learning] sections.
+    mutating func set(section: String, _ name: String, _ value: Any, _ warn: (String) -> Void) {
+        let key = "\(section).\(name)"
+        func choice() -> String? {
+            guard let s = value as? String, Config.choices[key]?.contains(s) ?? false else {
+                warn("\(key) must be one of: \(Config.choices[key]?.joined(separator: ", ") ?? "")"); return nil
+            }
+            return s
+        }
+        func int(_ range: ClosedRange<Int>) -> Int? {
+            guard let i = value as? Int, range.contains(i) else { warn("\(key) must be a whole number \(range.lowerBound)…\(range.upperBound)"); return nil }
+            return i
+        }
+        func number(_ range: ClosedRange<Double>) -> Double? {
+            guard let d = (value as? Int).map(Double.init) ?? value as? Double, range.contains(d) else {
+                warn("\(key) must be a number \(range.lowerBound)…\(range.upperBound)"); return nil
+            }
+            return d
+        }
+        func bool() -> Bool? {
+            guard let b = value as? Bool else { warn("\(key) must be true or false"); return nil }
+            return b
+        }
+        func strings() -> [String]? {
+            guard let a = value as? [Any], a.allSatisfy({ $0 is String }) else { warn("\(key) must be a list of strings"); return nil }
+            return a as? [String]
+        }
+        switch key {
+        case "panel.position": if let v = choice() { panelPosition = v }
+        case "panel.screen": if let v = choice() { panelScreen = v }
+        case "panel.close_on_blur": if let v = bool() { closeOnBlur = v }
+        case "panel.animation": if let v = bool() { animation = v }
+        case "panel.animation_ms": if let v = int(0...1000) { animationMs = v }
+        case "search.sources":
+            guard let v = strings() else { return }
+            let unknown = v.filter { !Config.allSources.contains($0) }
+            if !unknown.isEmpty { warn("search.sources: unknown \(unknown.joined(separator: ", ")) (known: \(Config.allSources.joined(separator: ", ")))") }
+            sources = Set(v.filter { Config.allSources.contains($0) })
+        case "search.web_fallback": if let v = bool() { webFallback = v }
+        case "files.roots": if let v = strings(), !v.isEmpty { fileRoots = v }
+        case "files.limit": if let v = int(10...500) { fileLimit = v }
+        case "files.recent_days": if let v = int(1...365) { recentDays = v }
+        case "files.screenshot_thumbnails": if let v = int(0...200) { screenshotThumbnails = v }
+        case "apps.folders": if let v = strings(), !v.isEmpty { appFolders = v }
+        case "apps.browser": if let v = choice() { browser = v }
+        case "apps.editor": if let v = choice() { editor = v }
+        case "apps.terminal":
+            if let s = value as? String, !s.isEmpty { terminalApp = s } else { warn("\(key) must be an app name") }
+        case "learning.usage_half_life_days": if let v = number(0.5...365) { usageHalfLifeDays = v }
+        case "learning.search_half_life_days": if let v = number(0.5...365) { searchHalfLifeDays = v }
+        default: warn("unknown key \(key)")
+        }
+    }
+
+    /// "~/x" -> absolute path.
+    static func expand(_ path: String) -> String { (path as NSString).expandingTildeInPath }
 }
 
 extension Theme {

@@ -45,3 +45,32 @@ keep_days = 30
 # Never record what is copied while one of these apps is in front (bundle ids or names),
 # for password managers that do not mark their copies as concealed.
 ignore_apps = []
+
+# Where and how the panel appears.
+[panel]
+position = "center"        # center | upper | top
+screen = "mouse"           # mouse | focused (the front window's screen) | main (with the menu bar)
+close_on_blur = true       # hide when another window takes focus
+animation = true
+animation_ms = 120         # opening; closing takes two thirds of it
+
+# What the main search lists. Remove a name to leave that source out.
+[search]
+sources = ["apps", "menus", "system", "snippets", "settings", "projects", "generators", "bookmarks", "windows"]
+web_fallback = true        # the "Search <engine> for …" row at the bottom
+
+[files]
+roots = ["~"]              # where file search and Recent Files look
+limit = 60
+recent_days = 14
+screenshot_thumbnails = 40
+
+[apps]
+folders = ["/Applications", "/System/Applications", "~/Applications"]
+browser = "helium"         # bookmarks: helium | chrome | brave | arc | edge | vivaldi | chromium | none
+editor = "vscode"          # projects and Edit actions: vscode | cursor | vscodium | windsurf | textedit
+terminal = "Ghostty"       # "Open in …" actions: an app name
+
+[learning]
+usage_half_life_days = 7   # how fast picks stop counting
+search_half_life_days = 14 # how fast learned searches fade

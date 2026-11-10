@@ -5,7 +5,7 @@ let projects = Box<[URL]>([])
 /// Re-reads Helium bookmarks and VS Code recents off the main thread (both small files).
 func refreshBrowserAndProjects() {
     DispatchQueue.global(qos: .utility).async {
-        let b = Bookmarks.helium(), p = VSCodeRecents.load()
+        let b = Bookmarks.load(browser: config.browser), p = VSCodeRecents.load()
         DispatchQueue.main.async { bookmarks.value = b; projects.value = p }
     }
 }
@@ -20,8 +20,8 @@ func bookmarkItems(_ q: String) -> [Item] {
     }.sorted { $0.score > $1.score }
 }
 
-let vscode = NSWorkspace.shared.urlForApplication(withBundleIdentifier: "com.microsoft.VSCode")
 func projectItems(_ q: String) -> [Item] {
+    let editor = Editors.current
     let home = NSHomeDirectory()
     return projects.value.enumerated().compactMap { i, u in
         let name = u.deletingPathExtension().lastPathComponent
@@ -31,17 +31,15 @@ func projectItems(_ q: String) -> [Item] {
         let place = remote.map { "\($0) · \(dir)" } ?? (dir.hasPrefix(home) ? "~" + dir.dropFirst(home.count) : dir)
         return Item(id: "project:" + u.absoluteString, title: name, subtitle: place,
                     icon: sf("nf-md-microsoft_visual_studio_code"), run: {
-                        if let vscode, !u.isFileURL {  // remote folders open through VS Code's own CLI
-                            let cli = vscode.appendingPathComponent("Contents/Resources/app/bin/code").path
-                            Shell.run(cli, [u.hasDirectoryPath || u.pathExtension.isEmpty ? "--folder-uri" : "--file-uri", u.absoluteString])
-                        } else if let vscode { NSWorkspace.shared.open([u], withApplicationAt: vscode, configuration: NSWorkspace.OpenConfiguration()) }
+                        if let app = editor.app, let cli = editor.cli, !u.isFileURL {  // remote folders open through the editor's CLI
+                            Shell.run(app.appendingPathComponent("Contents/Resources/app/bin/" + cli).path,
+                                      [u.hasDirectoryPath || u.pathExtension.isEmpty ? "--folder-uri" : "--file-uri", u.absoluteString])
+                        } else if u.isFileURL { editor.open(u.path) }
                         else { NSWorkspace.shared.open(u) }
                     }, score: s, actions: {
                         guard u.isFileURL else { return [Act.copy("Copy URI", u.absoluteString)] }
                         return [Act.file(u.path)[0],
-                                Act.make("Open in Ghostty", "nf-md-ghost") {
-                                    Shell.run("/usr/bin/open", ["-na", "Ghostty", "--args", "--working-directory=" + (u.hasDirectoryPath ? u.path : u.deletingLastPathComponent().path)])
-                                },
+                                Act.terminal(u.hasDirectoryPath ? u.path : u.deletingLastPathComponent().path),
                                 Act.copy("Copy Path", u.path)]
                     })
     }.sorted { $0.score > $1.score }

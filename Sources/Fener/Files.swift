@@ -10,7 +10,9 @@ final class FileSearch {
     private var pending: DispatchWorkItem?
     private var running: Process?
     private var icons: [String: NSImage] = [:]
-    static let limit = 60, debounce = 0.15
+    static let debounce = 0.15
+    var roots = [NSHomeDirectory()]   // config [files] roots
+    var limit = 60
 
     func search(_ query: String) -> [Item] {
         let q = query.trimmingCharacters(in: .whitespaces)
@@ -46,9 +48,9 @@ final class FileSearch {
 
     private func run(_ q: String) {
         running?.terminate()
-        let p = Process(), pipe = Pipe()
+        let p = Process(), pipe = Pipe(), limit = limit
         p.executableURL = URL(fileURLWithPath: "/usr/bin/mdfind")
-        p.arguments = ["-onlyin", NSHomeDirectory(), "-name", q]
+        p.arguments = roots.flatMap { ["-onlyin", $0] } + ["-name", q]
         p.standardOutput = pipe
         p.standardError = FileHandle.nullDevice
         guard (try? p.run()) != nil else { return }
@@ -57,7 +59,7 @@ final class FileSearch {
             // Read until enough useful lines, then stop mdfind instead of waiting for all matches.
             var buffer = Data(), lines: [String] = []
             let h = pipe.fileHandleForReading
-            while lines.count < Self.limit {
+            while lines.count < limit {
                 let chunk = h.availableData
                 if chunk.isEmpty { break }
                 buffer.append(chunk)
@@ -89,7 +91,9 @@ final class FileSearch {
 /// thumbnails included, and calls `onChange` on the main thread.
 final class SpotlightList {
     struct Entry { let path: String; let date: Date }
-    let query: String, dateAttribute: CFString, limit: Int, thumbnails: Int
+    let dateAttribute: CFString, limit: Int
+    var query: String, thumbnails: Int
+    var roots = [NSHomeDirectory()]
     private(set) var entries: [Entry] = []
     private(set) var thumbs: [String: NSImage] = [:]
     var onChange: () -> Void = {}
@@ -103,9 +107,9 @@ final class SpotlightList {
     func refresh(iconSide: CGFloat) {
         guard !loading, Date().timeIntervalSince(loadedAt) > 5 else { return }
         loading = true
-        let (q, attr, limit, nThumbs) = (query, dateAttribute, limit, thumbnails)
+        let (q, attr, limit, nThumbs, roots) = (query, dateAttribute, limit, thumbnails, roots)
         DispatchQueue.global(qos: .userInitiated).async {
-            let out = Shell.capture("/usr/bin/mdfind", ["-onlyin", NSHomeDirectory(), q], timeout: 5) ?? ""
+            let out = Shell.capture("/usr/bin/mdfind", roots.flatMap { ["-onlyin", $0] } + [q], timeout: 5) ?? ""
             let list = out.split(separator: "\n").map(String.init)
                 .filter { FileSearch.useful($0) && !$0.hasSuffix(".app") && !$0.contains(".app/") }
                 .compactMap { p -> Entry? in

@@ -3,6 +3,11 @@
 width = 320
 
 [[entry]]
+name = "fener Settings"
+icon = "nf-md-cog_outline"
+menu = "preferences"
+
+[[entry]]
 name = "fener"
 subtitle = "config.toml"
 icon = "nf-md-tune"

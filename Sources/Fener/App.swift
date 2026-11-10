@@ -66,16 +66,36 @@ func applySettings() {
     problems = newProblems
     configureClipboard(c)
     learning.enabled = c.learnQueries
+    configureBehavior(c)
     if th != theme {
         theme = th
         Icons.clearCache()
         let wasVisible = launcher.isVisible, open = launcher.openMenu
         launcher.tearDown()
         launcher = makeLauncher()
+        configureBehavior(c)
         if wasVisible { launcher.show(open) }
     } else {
         launcher.refilter()
     }
+}
+
+/// Applies [panel], [files], [apps] and [learning] to the parts that use them.
+func configureBehavior(_ c: Config) {
+    launcher.behavior = PanelBehavior(position: c.panelPosition, screen: c.panelScreen, closeOnBlur: c.closeOnBlur,
+                                      animation: c.animation, animationMs: c.animationMs)
+    files.roots = c.fileRoots.map(Config.expand)
+    files.limit = c.fileLimit
+    recentFiles.roots = files.roots
+    recentFiles.query = "kMDItemLastUsedDate >= $time.today(-\(c.recentDays))"
+    screenshots.roots = files.roots
+    screenshots.thumbnails = c.screenshotThumbnails
+    if AppScanner.folders != c.appFolders.map(Config.expand) {
+        AppScanner.folders = c.appFolders.map(Config.expand)
+        apps.refresh()
+    }
+    apps.frecency.halfLife = c.usageHalfLifeDays * 86_400
+    learning.halfLife = c.searchHalfLifeDays * 86_400
 }
 
 func makeLauncher() -> Launcher {

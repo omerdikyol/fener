@@ -12,6 +12,47 @@ struct Item {
     var submenu: (() -> Mode)? = nil  // set: Return opens this mode instead of running
     /// Other things to do with this row, built only when asked: Cmd+K lists them, Cmd+Return runs the first.
     var actions: (() -> [Item])? = nil
+    /// After running: close the panel (default), stay to show the change (toggles), or go back a level (choices).
+    var then: After = .close
+    enum After { case close, stay, back }
+}
+
+/// Where and how the panel appears (config [panel]).
+struct PanelBehavior {
+    var position = "center"   // center | upper | top
+    var screen = "mouse"      // mouse | focused | main
+    var closeOnBlur = true
+    var animation = true
+    var animationMs = 120
+
+    /// The screen to open on: the mouse's, the front window's, or the one with the menu bar.
+    func targetScreen() -> NSScreen {
+        let byMouse = NSScreen.screens.first { NSMouseInRect(NSEvent.mouseLocation, $0.frame, false) }
+        switch screen {
+        case "main": return NSScreen.screens.first ?? byMouse ?? NSScreen.main!
+        case "focused":
+            // The frontmost app's first normal window; window bounds need no permission.
+            if let pid = NSWorkspace.shared.frontmostApplication?.processIdentifier,
+               let list = CGWindowListCopyWindowInfo([.optionOnScreenOnly, .excludeDesktopElements], kCGNullWindowID) as? [[String: Any]],
+               let w = list.first(where: { ($0[kCGWindowOwnerPID as String] as? pid_t) == pid && ($0[kCGWindowLayer as String] as? Int) == 0 }),
+               let b = w[kCGWindowBounds as String] as? [String: CGFloat], let primary = NSScreen.screens.first {
+                // CG coordinates start top-left on the primary screen; AppKit's start bottom-left.
+                let center = NSPoint(x: (b["X"] ?? 0) + (b["Width"] ?? 0) / 2, y: primary.frame.maxY - ((b["Y"] ?? 0) + (b["Height"] ?? 0) / 2))
+                if let s = NSScreen.screens.first(where: { NSMouseInRect(center, $0.frame, false) }) { return s }
+            }
+            return byMouse ?? NSScreen.main!
+        default: return byMouse ?? NSScreen.main!
+        }
+    }
+
+    /// Top edge of the panel at its tallest (`height`) on `vf`.
+    func top(in vf: NSRect, height: CGFloat) -> CGFloat {
+        switch position {
+        case "top": return (vf.maxY - vf.height * 0.08).rounded()
+        case "upper": return (vf.maxY - vf.height * 0.22).rounded()
+        default: return (vf.midY + height / 2).rounded()
+        }
+    }
 }
 
 /// What the panel is searching: the root (apps, windows, menus) or one menu.
@@ -51,6 +92,7 @@ final class Launcher: NSObject, NSWindowDelegate, NSTableViewDataSource, NSTable
     /// The open menu, if one is open above the root (kept across a theme rebuild).
     var openMenu: Mode? { stack.count > 1 ? stack.last : nil }
     var onShow: () -> Void = {}
+    var behavior = PanelBehavior()
     /// A row was run or opened; the text is what was typed in the main search (nil inside a menu).
     var onPick: (Item, String?) -> Void = { _, _ in }
     private var rootQuery: String? { stack.count == 1 ? field.stringValue : nil }
@@ -182,11 +224,10 @@ final class Launcher: NSObject, NSWindowDelegate, NSTableViewDataSource, NSTable
         hiding = false
         stack = [root] + (mode.map { [$0] } ?? [])
         setPlaceholder()
-        let screen = NSScreen.screens.first { NSMouseInRect(NSEvent.mouseLocation, $0.frame, false) } ?? NSScreen.main!
-        let vf = screen.visibleFrame
-        // Top edge fixed so the panel grows downward as results change; centered at its tallest.
+        let vf = behavior.targetScreen().visibleFrame
+        // Top edge fixed so the panel grows downward as results change.
         let maxH = chromeH + theme.rowHeight * (CGFloat(theme.visibleRows) + 0.5)
-        topY = (vf.midY + maxH / 2).rounded()
+        topY = behavior.top(in: vf, height: maxH)
         centerX = vf.midX
         panel.setFrameOrigin(NSPoint(x: (vf.midX - theme.width / 2).rounded(), y: topY - panel.frame.height))
         if !field.stringValue.isEmpty { field.stringValue = "" }
@@ -199,13 +240,13 @@ final class Launcher: NSObject, NSWindowDelegate, NSTableViewDataSource, NSTable
         panel.makeFirstResponder(field)
         // Refresh sources after the panel is up so the work never delays the first frame;
         // cached results cover anything typed in the meantime.
-        animate(scaleFrom: 0.97, to: 1, alphaTo: 1, duration: 0.12) { [weak self] in self?.onShow() }
+        animate(scaleFrom: 0.97, to: 1, alphaTo: 1, duration: Double(behavior.animationMs) / 1000) { [weak self] in self?.onShow() }
     }
 
     func hide() {
         guard panel.isVisible, !hiding else { return }
         hiding = true
-        animate(scaleFrom: 1, to: 0.98, alphaTo: 0, duration: 0.08) { [weak self] in
+        animate(scaleFrom: 1, to: 0.98, alphaTo: 0, duration: Double(behavior.animationMs) / 1500) { [weak self] in
             guard let self, self.hiding else { return }
             self.panel.orderOut(nil)
             self.hiding = false
@@ -213,6 +254,7 @@ final class Launcher: NSObject, NSWindowDelegate, NSTableViewDataSource, NSTable
     }
 
     private func animate(scaleFrom: CGFloat, to: CGFloat, alphaTo: CGFloat, duration: TimeInterval, done: @escaping () -> Void) {
+        guard behavior.animation, duration > 0 else { panel.alphaValue = alphaTo; done(); return }
         guard let layer = panel.contentView?.layer else { return }
         let b = layer.bounds
         func scaled(_ k: CGFloat) -> CATransform3D {  // scale about the center; view layers anchor at (0,0)
@@ -235,7 +277,7 @@ final class Launcher: NSObject, NSWindowDelegate, NSTableViewDataSource, NSTable
         }, completionHandler: done)
     }
 
-    func windowDidResignKey(_ notification: Notification) { hide() }
+    func windowDidResignKey(_ notification: Notification) { if behavior.closeOnBlur { hide() } }
 
     func windowWillReturnFieldEditor(_ sender: NSWindow, to client: Any?) -> Any? {
         client as? NSTextField === field ? fieldEditor : nil
@@ -304,8 +346,11 @@ final class Launcher: NSObject, NSWindowDelegate, NSTableViewDataSource, NSTable
         let item = items[row]
         onPick(item, rootQuery)
         if let sub = item.submenu { push(sub()); return }
-        hide()
-        item.run()
+        switch item.then {
+        case .close: hide(); item.run()
+        case .stay: item.run(); refilter()
+        case .back: item.run(); pop()
+        }
     }
 
     // MARK: data

@@ -7,9 +7,8 @@ struct AppEntry {
 }
 
 enum AppScanner {
-    static var roots: [String] {
-        ["/Applications", "/System/Applications", NSHomeDirectory() + "/Applications"]
-    }
+    /// Folders scanned for apps (config [apps] folders).
+    static var folders = ["/Applications", "/System/Applications", NSHomeDirectory() + "/Applications"]
     /// Apps that live outside the scanned folders but people expect to find.
     static let extras = ["/System/Library/CoreServices/Finder.app"]
 
@@ -36,7 +35,7 @@ enum AppScanner {
                 }
             }
         }
-        roots.forEach { walk($0, depth: 1) }
+        folders.forEach { walk($0, depth: 1) }
         extras.filter(fm.fileExists).forEach(add)
         return out
     }
@@ -48,6 +47,7 @@ final class Frecency {
     private var entries: [String: Entry] = [:]
     private let url: URL
     static let halfLife: Double = 7 * 86400
+    var halfLife = Frecency.halfLife   // config [learning] usage_half_life_days
 
     init(url: URL) {
         self.url = url
@@ -58,7 +58,7 @@ final class Frecency {
 
     func value(_ key: String, now: Double = Date().timeIntervalSince1970) -> Double {
         guard let e = entries[key] else { return 0 }
-        return e.score * pow(0.5, (now - e.time) / Self.halfLife)
+        return e.score * pow(0.5, (now - e.time) / halfLife)
     }
 
     func bump(_ key: String, now: Double = Date().timeIntervalSince1970) {

@@ -25,6 +25,20 @@ enum Act {
         ]
     }
 
+    /// "Open in <terminal>" for a folder ([apps] terminal). Ghostty needs its own flag.
+    static func terminal(_ dir: String) -> Item {
+        let app = config.terminalApp
+        return make("Open in \(app)", "nf-md-console_line") {
+            if app.lowercased() == "ghostty" { Shell.run("/usr/bin/open", ["-na", "Ghostty", "--args", "--working-directory=" + dir]) }
+            else { Shell.run("/usr/bin/open", ["-a", app, dir]) }
+        }
+    }
+
+    /// "Edit" in the configured editor ([apps] editor).
+    static func edit(_ title: String, _ path: String) -> Item {
+        make(title, "nf-md-pencil") { Editors.current.open(path) }
+    }
+
     static func url(_ s: String) -> [Item] {
         [copy("Copy URL", s)]
     }

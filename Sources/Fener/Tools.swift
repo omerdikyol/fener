@@ -122,9 +122,14 @@ enum Audio {
 enum Bookmarks {
     struct Bookmark { let name: String; let url: String; let folder: String }
 
-    /// Chromium "Bookmarks" JSON from every Helium profile.
-    static func helium() -> [Bookmark] {
-        let base = URL(fileURLWithPath: NSHomeDirectory()).appendingPathComponent("Library/Application Support/net.imput.helium")
+    /// Where each Chromium-family browser keeps its profiles, under Application Support.
+    static let folders = ["helium": "net.imput.helium", "chrome": "Google/Chrome", "brave": "BraveSoftware/Brave-Browser",
+                          "arc": "Arc/User Data", "edge": "Microsoft Edge", "vivaldi": "Vivaldi", "chromium": "Chromium"]
+
+    /// Chromium "Bookmarks" JSON from every profile of the configured browser ([apps] browser).
+    static func load(browser: String) -> [Bookmark] {
+        guard let folder = folders[browser] else { return [] }
+        let base = URL(fileURLWithPath: NSHomeDirectory()).appendingPathComponent("Library/Application Support/" + folder)
         let profiles = (try? FileManager.default.contentsOfDirectory(atPath: base.path)) ?? []
         return profiles.flatMap { p -> [Bookmark] in
             guard let d = try? Data(contentsOf: base.appendingPathComponent(p).appendingPathComponent("Bookmarks")) else { return [] }
@@ -148,11 +153,36 @@ enum Bookmarks {
     }
 }
 
+/// Editors fener knows: where VS Code-family editors keep recents, their bundle id and CLI.
+struct Editors {
+    let key: String, name: String, bundleId: String, support: String?, cli: String?
+
+    static let all: [Editors] = [
+        Editors(key: "vscode", name: "VS Code", bundleId: "com.microsoft.VSCode", support: "Code", cli: "code"),
+        Editors(key: "cursor", name: "Cursor", bundleId: "com.todesktop.230313mzl4w4u92", support: "Cursor", cli: "cursor"),
+        Editors(key: "vscodium", name: "VSCodium", bundleId: "com.vscodium", support: "VSCodium", cli: "codium"),
+        Editors(key: "windsurf", name: "Windsurf", bundleId: "com.exafunction.windsurf", support: "Windsurf", cli: "windsurf"),
+        Editors(key: "textedit", name: "TextEdit", bundleId: "com.apple.TextEdit", support: nil, cli: nil),
+    ]
+    static var current: Editors { all.first { $0.key == config.editor } ?? all[0] }
+
+    var app: URL? { NSWorkspace.shared.urlForApplication(withBundleIdentifier: bundleId) }
+
+    /// Opens a file or folder in this editor (TextEdit opens files only).
+    func open(_ path: String) {
+        let u = URL(fileURLWithPath: path)
+        if let app { NSWorkspace.shared.open([u], withApplicationAt: app, configuration: NSWorkspace.OpenConfiguration()) }
+        else { Shell.run("/usr/bin/open", ["-t", path]) }
+    }
+}
+
 enum VSCodeRecents {
-    /// The recently-opened list from VS Code's state database, opened read-only. Newer
-    /// versions store it as "recently.opened", older ones as "history.recentlyOpenedPathsList".
-    static func load() -> [URL] {
-        let db = NSHomeDirectory() + "/Library/Application Support/Code/User/globalStorage/state.vscdb"
+    /// The recently-opened list from a VS Code-family editor's state database, opened
+    /// read-only. Newer versions store it as "recently.opened", older ones as
+    /// "history.recentlyOpenedPathsList".
+    static func load(editor: Editors = Editors.current) -> [URL] {
+        guard let support = editor.support else { return [] }
+        let db = NSHomeDirectory() + "/Library/Application Support/\(support)/User/globalStorage/state.vscdb"
         var h: OpaquePointer?
         // A plain path: the "file:" URI form would need the space in "Application Support" escaped.
         guard sqlite3_open_v2(db, &h, SQLITE_OPEN_READONLY, nil) == SQLITE_OK else { sqlite3_close(h); return [] }

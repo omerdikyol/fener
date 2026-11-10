@@ -27,7 +27,8 @@ icon = "nf-md-bookmark"
 menu = "bookmarks"
 
 [[entry]]
-name = "VS Code Projects"
+name = "Projects"
+subtitle = "recent in your editor"
 icon = "nf-md-microsoft_visual_studio_code"
 menu = "projects"
 

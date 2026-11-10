@@ -8,6 +8,7 @@ let builtins: [String: Mode] = [
     "quit": Mode(prompt: "Quit…", search: quitItems),
     "snippets": Mode(prompt: "Snippets…", search: snippetItems),
     "used": Mode(prompt: "Recently Used…", width: 480, search: recentItems),
+    "preferences": Mode(prompt: "fener Settings…", width: 560, search: settingsMenuItems),
     "settings": Mode(prompt: "Settings…", search: settingsItems),
     "audio": Mode(prompt: "Audio…", search: audioItems),
     "bookmarks": Mode(prompt: "Bookmarks…", width: 560, search: bookmarkItems),
@@ -140,16 +141,18 @@ let root = Mode(prompt: "Search…", dynamicWidth: { homeMenu?.width }) { raw in
         }
     }
     let learned = learning.boosts(for: raw)
-    let merged = merge(apps.search(raw).map { var i = $0; i.score += learned[i.id] ?? 0; return i }, links,
-                       other(searchMenus(raw, entries: true), penalty: 0),
-                       other(systemItems(raw), penalty: 0),
-                       other(snippetItems(raw), penalty: 2, subtitle: { _ in "snippet" }),
-                       other(settingsItems(raw), penalty: 3),
-                       other(projectItems(raw), penalty: 4, subtitle: { "VS Code · " + $0 }),
-                       other(generatorItems(raw), penalty: 5),
-                       other(bookmarkItems(raw), penalty: 6),
-                       other(windows.search(raw, all: false), penalty: 10))
+    // Each source runs only when listed in [search] sources.
+    func source(_ name: String, _ items: @autoclosure () -> [Item]) -> [Item] { config.sources.contains(name) ? items() : [] }
+    let merged = merge(source("apps", apps.search(raw).map { var i = $0; i.score += learned[i.id] ?? 0; return i }), links,
+                       other(source("menus", searchMenus(raw, entries: true)), penalty: 0),
+                       other(source("system", systemItems(raw)), penalty: 0),
+                       other(source("snippets", snippetItems(raw)), penalty: 2, subtitle: { _ in "snippet" }),
+                       other(source("settings", settingsItems(raw)), penalty: 3),
+                       other(source("projects", projectItems(raw)), penalty: 4, subtitle: { "\(Editors.current.name) · " + $0 }),
+                       other(source("generators", generatorItems(raw)), penalty: 5),
+                       other(source("bookmarks", bookmarkItems(raw)), penalty: 6),
+                       other(source("windows", windows.search(raw, all: false)), penalty: 10))
     // Last row: search the web with the default engine (it only opens the browser).
-    let web = quicklinks.defaultEngine.map { [linkItem($0, raw, score: Int.min)] } ?? []
+    let web = config.webFallback ? quicklinks.defaultEngine.map { [linkItem($0, raw, score: Int.min)] } ?? [] : []
     return top + merged + web
 }

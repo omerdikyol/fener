@@ -10,7 +10,7 @@ func snippetItems(_ q: String) -> [Item] {
         let first = sn.text.split(whereSeparator: \.isNewline).first.map(String.init) ?? ""
         return Item(id: "snippet:" + sn.name, title: sn.name, subtitle: first, icon: sf("nf-md-text_box_edit"),
                     run: { Clipboard.copyText(Snippets.expand(sn.text)) }, score: s,
-                    actions: { [Act.make("Edit Snippet", "nf-md-pencil") { Shell.run("/usr/bin/open", ["-t", sn.url.path]) },
+                    actions: { [Act.edit("Edit Snippet", sn.url.path),
                                 Act.copy("Copy Raw Text", sn.text)] })
     }.sorted { $0.score > $1.score }
 }

@@ -13,6 +13,7 @@ final class Learning {
 
     static let halfLife: Double = 14 * 86_400, maxPairs = 500, maxRecent = 10, maxQueryLength = 32
     var enabled = true
+    var halfLife = Learning.halfLife   // config [learning] search_half_life_days
     private var store = Store()
     private let url: URL
     private let io = DispatchQueue(label: "fener.learning", qos: .utility)
@@ -28,7 +29,7 @@ final class Learning {
         String(Fuzzy.fold(q.trimmingCharacters(in: .whitespaces)).prefix(maxQueryLength))
     }
 
-    private func decayed(_ p: Pair, _ now: Double) -> Double { p.score * pow(0.5, (now - p.time) / Self.halfLife) }
+    private func decayed(_ p: Pair, _ now: Double) -> Double { p.score * pow(0.5, (now - p.time) / halfLife) }
 
     /// Records a pick: always into Recently Used, and with its typed text when there was some.
     func picked(id: String, title: String, query: String?, recent: Bool = true, now: Double = Date().timeIntervalSince1970) {

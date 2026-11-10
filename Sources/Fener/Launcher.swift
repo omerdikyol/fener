@@ -8,6 +8,14 @@ struct Item {
     var accessory = ""     // right-aligned hint, e.g. "›" for submenus
     var icon: NSImage?
     var run: () -> Void = {}
+    var score = 0          // used to merge results from several sources
+    var submenu: (() -> Mode)? = nil  // set: Return opens this mode instead of running
+}
+
+/// What the panel is searching: the root (apps, windows, menus) or one menu.
+struct Mode {
+    var prompt: String
+    var search: (String) -> [Item]
 }
 
 /// Borderless panel that can take keyboard focus without activating the app (like Spotlight),
@@ -25,11 +33,12 @@ final class Launcher: NSObject, NSWindowDelegate, NSTableViewDataSource, NSTable
     private let scroll = NSScrollView()
     private let fade = CAGradientLayer()
     private let fieldEditor = NSTextView()
-    private let search: (String) -> [Item]
+    private let root: Mode
+    private var stack: [Mode]
     private var items: [Item] = []
     private var hiding = false
     private var topY: CGFloat = 0
-    var prompt = "Apps…" { didSet { setPlaceholder() } }
+    private var mode: Mode { stack[stack.count - 1] }
     var onShow: () -> Void = {}
 
     // Vertical metrics: padding, search line, gap, list, padding.
@@ -37,9 +46,10 @@ final class Launcher: NSObject, NSWindowDelegate, NSTableViewDataSource, NSTable
     private let searchH: CGFloat = 24, gap: CGFloat = 10
     private var chromeH: CGFloat { pad + searchH + gap + pad }
 
-    init(theme: Theme, search: @escaping (String) -> [Item]) {
+    init(theme: Theme, root: Mode) {
         self.theme = theme
-        self.search = search
+        self.root = root
+        self.stack = [root]
         panel = LauncherPanel(contentRect: NSRect(x: 0, y: 0, width: theme.width, height: 200),
                               styleMask: [.borderless, .nonactivatingPanel], backing: .buffered, defer: false)
         super.init()
@@ -146,8 +156,11 @@ final class Launcher: NSObject, NSWindowDelegate, NSTableViewDataSource, NSTable
         panel.orderOut(nil)
     }
 
-    func show() {
+    /// Opens the panel at the root mode, or directly in `mode` (e.g. `fener show themes`).
+    func show(_ mode: Mode? = nil) {
         hiding = false
+        stack = [root] + (mode.map { [$0] } ?? [])
+        setPlaceholder()
         let screen = NSScreen.screens.first { NSMouseInRect(NSEvent.mouseLocation, $0.frame, false) } ?? NSScreen.main!
         let vf = screen.visibleFrame
         // Top edge fixed so the panel grows downward as results change; centered at its tallest.
@@ -209,6 +222,7 @@ final class Launcher: NSObject, NSWindowDelegate, NSTableViewDataSource, NSTable
         let key = e.charactersIgnoringModifiers?.lowercased() ?? ""
         switch (e.keyCode, mods) {
         case (53, []): hide()                                  // escape
+        case (51, []) where field.stringValue.isEmpty && stack.count > 1: pop()  // backspace on empty: back
         case (125, []): move(1)                                // down
         case (126, []): move(-1)                               // up
         case (36, []), (76, []): run(table.selectedRow)        // return, keypad enter
@@ -240,6 +254,7 @@ final class Launcher: NSObject, NSWindowDelegate, NSTableViewDataSource, NSTable
     private func run(_ row: Int) {
         guard items.indices.contains(row) else { return }
         let item = items[row]
+        if let sub = item.submenu { push(sub()); return }
         hide()
         item.run()
     }
@@ -250,9 +265,32 @@ final class Launcher: NSObject, NSWindowDelegate, NSTableViewDataSource, NSTable
 
     func setQuery(_ q: String) { field.stringValue = q; filter() }
 
+    func push(_ m: Mode) {
+        stack.append(m)
+        field.stringValue = ""
+        setPlaceholder()
+        filter()
+    }
+
+    private func pop() {
+        guard stack.count > 1 else { return }
+        stack.removeLast()
+        setPlaceholder()
+        filter()
+    }
+
+    /// Re-runs the current search after a source changed, keeping the selected row if it is still there.
+    func refilter() {
+        guard isVisible else { return }
+        let keep = items.indices.contains(table.selectedRow) ? items[table.selectedRow].id : nil
+        filter()
+        if let keep, let r = items.firstIndex(where: { $0.id == keep }), r != table.selectedRow { select(r) }
+    }
+
     private func filter() {
-        let new = search(field.stringValue)
-        let same = !new.isEmpty && new.map(\.id) == items.map(\.id) && !new.contains { $0.id.isEmpty }
+        let new = mode.search(field.stringValue)
+        let key = { (i: Item) in i.id + "\u{1}" + i.title + "\u{1}" + i.subtitle }
+        let same = !new.isEmpty && new.map(key) == items.map(key) && !new.contains { $0.id.isEmpty }
         items = new
         if same {
             if table.selectedRow != 0 { select(0) } else { table.scrollRowToVisible(0) }
@@ -271,6 +309,9 @@ final class Launcher: NSObject, NSWindowDelegate, NSTableViewDataSource, NSTable
         if panel.isVisible || topY > 0 { f.origin.y = topY - h }
         f.size.height = h
         panel.setFrame(f, display: panel.isVisible)
+        // Explicit frames: autoresizing loses track once the list height reaches zero.
+        field.frame.origin.y = h - pad - searchH
+        scroll.frame = NSRect(x: pad, y: pad, width: theme.width - 2 * pad, height: rows * theme.rowHeight)
         let overflow = CGFloat(items.count) > CGFloat(theme.visibleRows)
         CATransaction.begin(); CATransaction.setDisableActions(true)
         fade.frame = scroll.bounds
@@ -281,7 +322,7 @@ final class Launcher: NSObject, NSWindowDelegate, NSTableViewDataSource, NSTable
 
     private func setPlaceholder() {
         field.placeholderAttributedString = NSAttributedString(
-            string: prompt, attributes: [.foregroundColor: theme.muted, .font: theme.font(theme.fontSize)])
+            string: mode.prompt, attributes: [.foregroundColor: theme.muted, .font: theme.font(theme.fontSize)])
     }
 
     func numberOfRows(in tableView: NSTableView) -> Int { items.count }

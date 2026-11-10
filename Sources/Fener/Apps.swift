@@ -114,7 +114,7 @@ final class AppProvider {
             if a.1 != b.1 { return a.1 > b.1 }
             return apps[a.2].name.localizedCaseInsensitiveCompare(apps[b.2].name) == .orderedAscending
         }
-        return ranked.map { item(apps[$0.2]) }
+        return ranked.map { r in var i = item(apps[r.2]); i.score = r.0; return i }
     }
 
     private func item(_ app: AppEntry) -> Item {

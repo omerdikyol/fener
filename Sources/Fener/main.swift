@@ -37,8 +37,88 @@ if args.contains("--bench") {
     exit(0)
 }
 
-let launcher = Launcher(theme: theme, search: apps.search)
-launcher.onShow = { apps.refresh() }
+let configDir = URL(fileURLWithPath: NSHomeDirectory()).appendingPathComponent(".config/fener")
+let menus = MenuStore(dir: configDir.appendingPathComponent("menus"))
+let windows = WindowProvider()
+
+final class Box<T> { var value: T; init(_ v: T) { value = v } }
+
+/// Fuzzy-ranks menu entries; empty query keeps file order.
+func rank(_ entries: [MenuEntry], _ q: String) -> [(MenuEntry, Int)] {
+    if q.isEmpty { return entries.enumerated().map { ($1, -$0) } }
+    return entries.compactMap { e in
+        [Fuzzy.score(q, e.name), Fuzzy.score(q, e.subtitle)].compactMap { $0 }.max().map { (e, $0) }
+    }.sorted { $0.1 > $1.1 }
+}
+
+func message(_ text: String) -> Mode {
+    Mode(prompt: text) { _ in [] }
+}
+
+func menuMode(_ m: Menu) -> Mode {
+    let box = Box(m.entries)
+    if m.executable != nil {
+        menus.list(m) { box.value = $0; launcher.refilter() }
+    }
+    return Mode(prompt: m.prompt) { q in rank(box.value, q).map { entryItem($0.0, of: m, score: $0.1) } }
+}
+
+func entryItem(_ e: MenuEntry, of m: Menu, score: Int) -> Item {
+    var item = Item(id: "menu:\(m.name):\(e.name)", title: e.name, subtitle: e.subtitle,
+                    accessory: e.menu.isEmpty ? "" : "›", icon: Icons.named(e.icon, theme: theme), score: score)
+    let choice = e.value.isEmpty ? e.name : e.value
+    let env = ["FENER_MENU": m.name, "FENER_CHOICE": choice]
+    if !e.menu.isEmpty {
+        item.submenu = { menus.menus[e.menu].map(menuMode) ?? message("No menu named \(e.menu)") }
+    } else if !e.command.isEmpty {
+        item.run = { Shell.sh(e.command, extraEnv: env) }
+    } else if let exe = m.executable {
+        item.run = { Shell.run(exe.path, [choice], extraEnv: env) }  // dmenu style: chosen entry comes back as $1
+    }
+    return item
+}
+
+/// The menus themselves, plus (when `entries`) every static entry, matched against `q`.
+func searchMenus(_ q: String, entries: Bool) -> [Item] {
+    var out: [Item] = []
+    for m in menus.menus.values.sorted(by: { $0.name < $1.name }) {
+        let title = Menu.title(m.name)
+        if let s = q.isEmpty ? 0 : Fuzzy.score(q, title) {
+            out.append(Item(id: "menu:\(m.name)", title: title, subtitle: "menu", accessory: "›",
+                            icon: Icons.named(m.icon.isEmpty ? "list.bullet" : m.icon, theme: theme),
+                            score: s, submenu: { menuMode(m) }))
+        }
+        guard entries, !q.isEmpty else { continue }
+        for (e, s) in rank(m.entries, q) {
+            var item = entryItem(e, of: m, score: s - 4)
+            if item.subtitle.isEmpty { item.subtitle = title }
+            out.append(item)
+        }
+    }
+    return out
+}
+
+/// Merges sources by score; on ties keeps the order sources were given in.
+func merge(_ lists: [Item]...) -> [Item] {
+    lists.joined().enumerated().sorted { a, b in
+        a.element.score != b.element.score ? a.element.score > b.element.score : a.offset < b.offset
+    }.map(\.element)
+}
+
+// ponytail: prefixes are fixed here; stage 6 reads them from config.toml.
+let root = Mode(prompt: "Apps…") { raw in
+    if raw.hasPrefix(">") { return searchMenus(String(raw.dropFirst()).trimmingCharacters(in: .whitespaces), entries: true) }
+    if raw.hasPrefix(";") { return windows.search(String(raw.dropFirst()).trimmingCharacters(in: .whitespaces), all: true) }
+    if raw.isEmpty { return apps.search("") }
+    // Windows rank a bit below apps and menus: long titles match short queries by accident.
+    return merge(apps.search(raw), searchMenus(raw, entries: true),
+                 windows.search(raw, all: false).map { var i = $0; i.score -= 10; return i })
+}
+
+let launcher = Launcher(theme: theme, root: root)
+launcher.onShow = { apps.refresh(); windows.refresh(); menus.load() }
+windows.onChange = { launcher.refilter() }
+windows.refresh()
 launcher.prewarm()
 
 if args.contains("--demo") {
@@ -65,11 +145,19 @@ let server = IPC.Server(path: IPC.socketPath) { words in
     switch words[0] {
     case "toggle": launcher.toggle()
     case "show":
-        if words.count > 1 { return "error: menus are not implemented yet" }
-        launcher.show()
+        if words.count > 1 {
+            menus.load()
+            guard let m = menus.menus[words[1]] else { return "error: no menu named \(words[1]) in \(menus.dir.path)" }
+            launcher.show(menuMode(m))
+        } else { launcher.show() }
     case "hide": launcher.hide()
-    case "reload": apps.refresh()
+    case "reload":
+        apps.refresh(); menus.load()
+        if !menus.errors.isEmpty { return "error: " + menus.errors.joined(separator: "; ") }
     case "ping": break
+    case "query":  // prints what the launcher would list: id, title, subtitle (tab-separated)
+        let rows = root.search(words.dropFirst().joined(separator: " ")).prefix(20)
+        return (["ok"] + rows.map { "\($0.id)\t\($0.title)\t\($0.subtitle)" }).joined(separator: "\n")
     default: return "error: unknown command \(words[0])"
     }
     // Reply once the frame is committed, so the client's timing includes the render.

@@ -3,7 +3,7 @@ import Foundation
 /// Line protocol over a Unix domain socket: the client sends "command args\n",
 /// the app answers "ok\n" or "error: …\n" and closes. Socket is mode 0600 in the cache dir.
 enum IPC {
-    static let commands: Set = ["toggle", "show", "hide", "reload", "ping"]
+    static let commands: Set = ["toggle", "show", "hide", "reload", "ping", "query"]
 
     static var socketPath: String {
         let dir = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)[0].appendingPathComponent("fener")
@@ -69,6 +69,7 @@ enum IPC {
         _ = line.withCString { write(fd, $0, strlen($0)) }
         let reply = readAll(fd, untilNewline: false).trimmingCharacters(in: .whitespacesAndNewlines)
         if reply == "ok" { return 0 }
+        if reply.hasPrefix("ok\n") { print(reply.dropFirst(3)); return 0 }
         FileHandle.standardError.write("fener: \(reply.isEmpty ? "no reply" : reply)\n".data(using: .utf8)!)
         return 1
     }

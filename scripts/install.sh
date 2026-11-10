@@ -27,6 +27,10 @@ cat > "$PLIST" <<PLIST
 PLIST
 
 launchctl bootout "gui/$(id -u)/$LABEL" 2>/dev/null || true
-launchctl bootstrap "gui/$(id -u)" "$PLIST"
+# bootstrap can fail with an I/O error while the old job is still being torn down; retry.
+for _ in 1 2 3 4 5; do
+    launchctl bootstrap "gui/$(id -u)" "$PLIST" 2>/dev/null && break
+    sleep 1
+done
 sleep 1
 "$BIN" ping && echo "fener is running. Try: $BIN toggle"

@@ -1,0 +1,24 @@
+# Static menu: `fener show workspace`, or type ">workspace" in the launcher.
+prompt = "Workspace…"
+icon = "square.grid.3x3"
+
+[[entry]]
+name = "Workspace 1"
+icon = "1.square"
+command = "omniwmctl command switch-workspace 1"
+
+[[entry]]
+name = "Workspace 2"
+icon = "2.square"
+command = "omniwmctl command switch-workspace 2"
+
+[[entry]]
+name = "Workspace 3"
+icon = "3.square"
+command = "omniwmctl command switch-workspace 3"
+
+[[entry]]
+name = "Wallpaper"
+subtitle = "pick a desktop picture"
+icon = "photo"
+menu = "wallpaper"

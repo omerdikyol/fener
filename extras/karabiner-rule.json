@@ -1,0 +1,13 @@
+{
+  "description": "Hyper+Space: toggle the fener launcher",
+  "manipulators": [
+    {
+      "type": "basic",
+      "from": {
+        "key_code": "spacebar",
+        "modifiers": { "mandatory": ["left_control", "left_command", "left_option"] }
+      },
+      "to": [{ "shell_command": "$HOME/.local/bin/fener toggle" }]
+    }
+  ]
+}

@@ -1,0 +1,26 @@
+# Tokyo Night, the built-in default. Copy this file to make a theme:
+# ~/.config/fener/themes/<name>.toml, then set theme = "<name>" in config.toml.
+# Every key is optional; missing keys keep these values. Colors are "#rrggbb" or "#rrggbbaa".
+
+[colors]
+background = "#1a1b26"
+background_opacity = 0.95
+border = "#c0caf5"
+text = "#c0caf5"
+muted = "#565f89"
+accent = "#7aa2f7"
+selection = "#24283b"
+
+[font]
+family = "JetBrainsMono Nerd Font"
+size = 15
+
+[layout]
+width = 480
+padding = 18
+border_width = 2
+corner_radius = 0
+selection_radius = 4
+row_height = 40
+icon_size = 20
+visible_rows = 9

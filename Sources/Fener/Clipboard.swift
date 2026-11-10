@@ -21,7 +21,7 @@ final class Clipboard {
     static func shouldRecord(types: [String]) -> Bool { !types.contains(where: skipTypes.contains) }
 
     private(set) var clips: [Clip] = []
-    let maxItems: Int, maxItemBytes: Int
+    var maxItems: Int, maxItemBytes: Int
     private let dir: URL
     private var images: URL { dir.appendingPathComponent("images") }
     private var index: URL { dir.appendingPathComponent("history.json") }
@@ -39,7 +39,11 @@ final class Clipboard {
         if let d = try? Data(contentsOf: index), let c = try? JSONDecoder().decode([Clip].self, from: d) { clips = c }
     }
 
+    func stop() { timer?.invalidate(); timer = nil }
+
     func start() {
+        guard timer == nil else { return }
+        lastChange = NSPasteboard.general.changeCount  // never record what was copied while off
         let t = Timer(timeInterval: 0.5, repeats: true) { [weak self] _ in self?.poll() }
         t.tolerance = 0.1
         RunLoop.main.add(t, forMode: .common)

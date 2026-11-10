@@ -1,10 +1,9 @@
 import AppKit
 
-/// Colors and metrics for the panel. Stage 1: Tokyo Night hard-coded; stage 6 loads these from theme files.
-struct Theme {
+/// Colors and metrics for the panel. The defaults are Tokyo Night; theme files override any of them.
+struct Theme: Equatable {
     var background = NSColor(hex: 0x1a1b26)
     var backgroundOpacity: CGFloat = 0.95
-    var panel = NSColor(hex: 0x24283b)
     var border = NSColor(hex: 0xc0caf5)
     var borderWidth: CGFloat = 2
     var text = NSColor(hex: 0xc0caf5)
@@ -27,7 +26,6 @@ struct Theme {
             ?? .monospacedSystemFont(ofSize: size, weight: weight > 5 ? .semibold : .regular)
     }
 
-    static let tokyoNight = Theme()
 }
 
 extension NSColor {

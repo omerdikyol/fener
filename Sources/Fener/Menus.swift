@@ -165,6 +165,7 @@ enum Shell {
 /// (contains a dot), a short non-ASCII string (nerd-font glyph or emoji), or an SF Symbol name.
 enum Icons {
     private static var cache: [String: NSImage] = [:]
+    static func clearCache() { cache.removeAll() }
 
     static func named(_ spec: String, theme: Theme) -> NSImage? {
         guard !spec.isEmpty else { return nil }

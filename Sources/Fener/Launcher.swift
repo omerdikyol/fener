@@ -37,6 +37,7 @@ final class Launcher: NSObject, NSWindowDelegate, NSTableViewDataSource, NSTable
     private var stack: [Mode]
     private var items: [Item] = []
     private var hiding = false
+    private var keyMonitor: Any?
     private var topY: CGFloat = 0
     private var mode: Mode { stack[stack.count - 1] }
     var onShow: () -> Void = {}
@@ -134,7 +135,7 @@ final class Launcher: NSObject, NSWindowDelegate, NSTableViewDataSource, NSTable
         root.addSubview(scroll)
 
         filter()
-        NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] e in
+        keyMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] e in
             guard let self, self.panel.isKeyWindow else { return e }
             return self.handleKey(e) ? nil : e
         }
@@ -145,6 +146,13 @@ final class Launcher: NSObject, NSWindowDelegate, NSTableViewDataSource, NSTable
     var isVisible: Bool { panel.isVisible && !hiding }
 
     func toggle() { isVisible ? hide() : show() }
+
+    /// Removes the panel and its key monitor; used when a theme change builds a new launcher.
+    func tearDown() {
+        if let keyMonitor { NSEvent.removeMonitor(keyMonitor) }
+        keyMonitor = nil
+        panel.orderOut(nil)
+    }
 
     /// Orders the panel in once while fully transparent so the first real show skips
     /// creating the window server backing and the first layout pass.
@@ -169,7 +177,9 @@ final class Launcher: NSObject, NSWindowDelegate, NSTableViewDataSource, NSTable
         panel.setFrameOrigin(NSPoint(x: (vf.midX - theme.width / 2).rounded(), y: topY - panel.frame.height))
         if !field.stringValue.isEmpty { field.stringValue = "" }
         filter()
-        panel.alphaValue = 0
+        // Start half visible: a fade from 0 spends its first composited frame fully transparent,
+        // which delayed the panel by about a frame.
+        panel.alphaValue = 0.5
         panel.makeKeyAndOrderFront(nil)
         panel.makeFirstResponder(field)
         // Refresh sources after the panel is up so the work never delays the first frame;

@@ -19,7 +19,7 @@ let app = NSApplication.shared
 app.setActivationPolicy(.accessory)  // same effect as LSUIElement: no Dock icon, no menu bar
 setvbuf(stdout, nil, _IOLBF, 0)
 
-let theme = Theme.tokyoNight
+var theme = Theme()
 let cacheDir = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)[0].appendingPathComponent("fener")
 let t0 = CACurrentMediaTime()
 let apps = AppProvider(frecency: Frecency(url: cacheDir.appendingPathComponent("frecency.json")))
@@ -198,34 +198,99 @@ let builtins: [String: Mode] = [
     "calc": Mode(prompt: "Calculate…") { q in Calc.answer(q, forced: true).map { [calcItem($0)] } ?? [] },
 ]
 
-// ponytail: prefixes are fixed here; stage 6 reads them from config.toml.
-let prefixes: [(String, (String) -> [Item])] = [
-    ("=", { q in Calc.answer(q, forced: true).map { [calcItem($0)] } ?? [] }),
-    ("/", files.search),
-    (":", emojiItems),
-    ("*", clipboardItems),
-    (">", { searchMenus($0, entries: true) }),
-    (";", { windows.search($0, all: true) }),
-]
+// MARK: settings (config.toml, themes/, menus/), hot reloaded
+
+var config = Config()
+var problems: [String] = []   // config, theme and menu errors, shown at the top of the empty search
+
+/// Reads config.toml and the selected theme. Missing files mean defaults.
+func loadSettings() -> (Config, Theme, [String]) {
+    var p: [String] = []
+    let cfgURL = configDir.appendingPathComponent("config.toml")
+    let c = (try? String(contentsOf: cfgURL, encoding: .utf8)).map { Config.parse($0, problems: &p) } ?? Config()
+    var th = Theme()
+    let themeURL = configDir.appendingPathComponent("themes/\(c.theme).toml")
+    if let text = try? String(contentsOf: themeURL, encoding: .utf8) {
+        th = Theme.parse(text, name: c.theme, problems: &p)
+    } else if c.theme != "tokyo-night" {
+        p.append("config.toml: theme \(c.theme) not found in \(themeURL.deletingLastPathComponent().path); using tokyo-night")
+    }
+    return (c, th, p)
+}
+
+func applySettings() {
+    let (c, th, p) = loadSettings()
+    menus.load()
+    config = c
+    problems = p + menus.errors
+    clipboard.maxItems = c.clipboardMaxItems
+    clipboard.maxItemBytes = c.clipboardMaxItemBytes
+    if c.clipboardEnabled { clipboard.start() } else { clipboard.stop() }
+    if th != theme {
+        theme = th
+        Icons.clearCache()
+        let wasVisible = launcher.isVisible
+        launcher.tearDown()
+        launcher = makeLauncher()
+        if wasVisible { launcher.show() }
+    } else {
+        launcher.refilter()
+    }
+}
+
+var prefixes: [(String, (String) -> [Item])] {
+    let all: [(String, (String) -> [Item])] = [
+        ("calc", { q in Calc.answer(q, forced: true).map { [calcItem($0)] } ?? [] }),
+        ("files", files.search),
+        ("emoji", emojiItems),
+        ("clipboard", { config.clipboardEnabled ? clipboardItems($0) : [] }),
+        ("menus", { searchMenus($0, entries: true) }),
+        ("windows", { windows.search($0, all: true) }),
+    ]
+    // Longest prefix first, so "::" could coexist with ":".
+    return all.compactMap { name, f in config.prefixes[name].flatMap { $0.isEmpty ? nil : ($0, f) } }
+        .sorted { $0.0.count > $1.0.count }
+}
+
+func problemItems() -> [Item] {
+    problems.map { m in
+        Item(id: "problem:" + m, title: m, subtitle: "", icon: sf("exclamationmark.triangle"),
+             run: { NSWorkspace.shared.open(configDir) })
+    }
+}
 
 let root = Mode(prompt: "Apps…") { raw in
     for (p, search) in prefixes where raw.hasPrefix(p) {
         return search(String(raw.dropFirst(p.count)).trimmingCharacters(in: .whitespaces))
     }
-    if raw.isEmpty { return apps.search("") }
+    if raw.isEmpty { return problemItems() + apps.search("") }
     // Windows rank a bit below apps and menus: long titles match short queries by accident.
     let merged = merge(apps.search(raw), searchMenus(raw, entries: true), systemItems(raw),
                        windows.search(raw, all: false).map { var i = $0; i.score -= 10; return i })
     return (Calc.answer(raw).map { [calcItem($0)] } ?? []) + merged
 }
 
-let launcher = Launcher(theme: theme, root: root)
-launcher.onShow = { apps.refresh(); windows.refresh(); menus.load() }
+func makeLauncher() -> Launcher {
+    let l = Launcher(theme: theme, root: root)
+    l.onShow = { apps.refresh(); windows.refresh(); menus.load() }
+    l.prewarm()
+    return l
+}
+
+do {
+    let (c, th, p) = loadSettings()
+    config = c; theme = th; problems = p + menus.errors
+    clipboard.maxItems = c.clipboardMaxItems
+    clipboard.maxItemBytes = c.clipboardMaxItemBytes
+    if c.clipboardEnabled { clipboard.start() }
+}
+var launcher = makeLauncher()
 windows.onChange = { launcher.refilter() }
 files.onChange = { launcher.refilter() }
-clipboard.start()
 windows.refresh()
-launcher.prewarm()
+
+try? FileManager.default.createDirectory(at: configDir, withIntermediateDirectories: true)
+let watcher = FolderWatcher(configDir.resolvingSymlinksInPath()) { applySettings() }
 
 if args.contains("--demo") {
     let screen = NSScreen.main!
@@ -260,8 +325,8 @@ let server = IPC.Server(path: IPC.socketPath) { words in
         } else { launcher.show() }
     case "hide": launcher.hide()
     case "reload":
-        apps.refresh(); menus.load()
-        if !menus.errors.isEmpty { return "error: " + menus.errors.joined(separator: "; ") }
+        apps.refresh(); applySettings()
+        if !problems.isEmpty { return "error: " + problems.joined(separator: "; ") }
     case "ping": break
     case "query":  // prints what the launcher would list: id, title, subtitle (tab-separated)
         let rows = root.search(words.dropFirst().joined(separator: " ")).prefix(20)

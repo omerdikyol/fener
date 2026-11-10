@@ -23,5 +23,4 @@ menu = "capture"
 [[entry]]
 name = "Speed Test"
 icon = "gauge.with.dots.needle.67percent"
-command = "networkQuality -v"
-terminal = true
+menu = "speedtest"

@@ -65,11 +65,21 @@ func message(_ text: String) -> Mode {
 }
 
 func menuMode(_ m: Menu) -> Mode {
-    let box = Box(m.entries)
-    if m.executable != nil {
-        menus.list(m) { box.value = $0; launcher.refilter() }
+    let box = Box(m.entries), key = UUID().uuidString
+    func load() {
+        menus.list(m) { entries, refresh in
+            box.value = entries
+            launcher.refilter()
+            // Keep refreshing only while this very menu is the one on screen.
+            if let refresh {
+                DispatchQueue.main.asyncAfter(deadline: .now() + refresh) {
+                    if launcher.isVisible, launcher.openMenu?.key == key { load() }
+                }
+            }
+        }
     }
-    return Mode(prompt: m.prompt, width: m.width) { q in rank(box.value, q).map { entryItem($0.0, of: m, score: $0.1) } }
+    if m.executable != nil { load() }
+    return Mode(prompt: m.prompt, width: m.width, key: key) { q in rank(box.value, q).map { entryItem($0.0, of: m, score: $0.1) } }
 }
 
 func entryItem(_ e: MenuEntry, of m: Menu, score: Int) -> Item {
@@ -84,7 +94,7 @@ func entryItem(_ e: MenuEntry, of m: Menu, score: Int) -> Item {
     if !e.command.isEmpty {
         item.run = e.terminal ? { Shell.inTerminal(e.command, template: config.terminal, extraEnv: env) }
                               : { Shell.sh(e.command, extraEnv: env) }
-    } else if let exe = m.executable {
+    } else if let exe = m.executable, e.value != "\u{0}" {
         item.run = { Shell.run(exe.path, [choice], extraEnv: env) }  // dmenu style: chosen entry comes back as $1
     }
     if e.confirm {

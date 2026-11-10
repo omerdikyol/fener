@@ -17,6 +17,7 @@ struct Mode {
     var prompt: String
     var width: CGFloat? = nil   // overrides the theme width while this mode is open
     var dynamicWidth: (() -> CGFloat?)? = nil  // asked each time, for widths that follow config
+    var key = ""               // identifies one opened instance, e.g. for a refreshing menu
     var search: (String) -> [Item]
 }
 

@@ -75,6 +75,16 @@ struct Menu {
     /// Parses an executable menu's output: a JSON array of objects, or one entry per line,
     /// each line either plain text (the name) or a JSON object
     /// {"name": …, "subtitle": …, "icon": …, "value": …, "command": …, "menu": …}.
+    /// An executable menu that prints a line {"refresh": seconds} is run again after that
+    /// many seconds for as long as it stays open (for live values). At least 0.5 s.
+    static func refreshInterval(_ out: String) -> Double? {
+        for line in out.split(separator: "\n") where line.contains("\"refresh\"") {
+            if let o = try? JSONSerialization.jsonObject(with: Data(line.utf8)) as? [String: Any],
+               let r = (o["refresh"] as? NSNumber)?.doubleValue, r > 0 { return max(0.5, r) }
+        }
+        return nil
+    }
+
     static func parseOutput(_ out: String) -> [MenuEntry] {
         func entry(_ o: [String: Any]) -> MenuEntry? {
             guard let name = o["name"] as? String, !name.isEmpty else { return nil }
@@ -125,11 +135,16 @@ final class MenuStore {
     }
 
     /// Runs an executable menu off the main thread and returns its entries on the main thread.
-    func list(_ menu: Menu, done: @escaping ([MenuEntry]) -> Void) {
-        guard let exe = menu.executable else { return done(menu.entries) }
+    /// Also returns the refresh interval the menu asked for, if any.
+    func list(_ menu: Menu, done: @escaping ([MenuEntry], Double?) -> Void) {
+        guard let exe = menu.executable else { return done(menu.entries, nil) }
         DispatchQueue.global(qos: .userInitiated).async {
-            let out = Shell.capture(exe.path, [], timeout: 5)
-            DispatchQueue.main.async { done(Menu.parseOutput(out ?? "")) }
+            let (out, status) = Shell.run(capturing: exe.path, [], timeout: 5)
+            // A failing menu says so instead of showing up empty.
+            let entries = status == 0 ? Menu.parseOutput(out)
+                : [MenuEntry(name: "\(menu.name) failed", subtitle: status < 0 ? "could not run it" : "exit code \(status)",
+                             icon: "exclamationmark.triangle", value: "\u{0}")]
+            DispatchQueue.main.async { done(entries, status == 0 ? Menu.refreshInterval(out) : nil) }
         }
     }
 }
@@ -184,19 +199,25 @@ enum Shell {
 
     /// Runs and returns stdout, or nil on failure or timeout. Call off the main thread.
     static func capture(_ exe: String, _ args: [String], timeout: TimeInterval) -> String? {
+        let (out, status) = run(capturing: exe, args, timeout: timeout)
+        return status == 0 ? out : nil
+    }
+
+    /// Runs and returns stdout and the exit status (-1 when it could not start). Off the main thread.
+    static func run(capturing exe: String, _ args: [String], timeout: TimeInterval) -> (String, Int32) {
         let p = Process(), pipe = Pipe()
         p.executableURL = URL(fileURLWithPath: exe)
         p.arguments = args
         p.environment = environment
         p.standardOutput = pipe
         p.standardInput = FileHandle.nullDevice
-        do { try p.run() } catch { return nil }
+        do { try p.run() } catch { return ("", -1) }
         let killer = DispatchWorkItem { if p.isRunning { p.terminate() } }
         DispatchQueue.global().asyncAfter(deadline: .now() + timeout, execute: killer)
         let data = pipe.fileHandleForReading.readDataToEndOfFile()
         p.waitUntilExit()
         killer.cancel()
-        return p.terminationStatus == 0 ? String(decoding: data, as: UTF8.self) : nil
+        return (String(decoding: data, as: UTF8.self), p.terminationStatus)
     }
 }
 

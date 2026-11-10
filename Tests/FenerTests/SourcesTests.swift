@@ -40,3 +40,33 @@ final class TerminalTests: XCTestCase {
         XCTAssertEqual((try? FileManager.default.contentsOfDirectory(atPath: runDir.path))?.filter { $0.hasSuffix(".sh") }.count ?? 0, 0)
     }
 }
+
+final class ExecutableMenuTests: XCTestCase {
+    func testOutputRefreshAndFailureRow() throws {
+        let dir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: dir) }
+        func script(_ name: String, _ body: String) throws {
+            let u = dir.appendingPathComponent(name)
+            try ("#!/bin/sh\n" + body).write(to: u, atomically: true, encoding: .utf8)
+            try FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: u.path)
+        }
+        try script("live.sh", "echo '{\"name\": \"a\"}'; echo '{\"refresh\": 0.1}'")
+        try script("broken.sh", "echo partial; exit 3")
+        let store = MenuStore(dir: dir)
+
+        let live = expectation(description: "live"), broken = expectation(description: "broken")
+        store.list(store.menus["live"]!) { entries, refresh in
+            XCTAssertEqual(entries.map(\.name), ["a"])   // the refresh line is not an entry
+            XCTAssertEqual(refresh, 0.5)                  // clamped to at least 0.5 s
+            live.fulfill()
+        }
+        store.list(store.menus["broken"]!) { entries, refresh in
+            XCTAssertEqual(entries.map(\.name), ["broken failed"])
+            XCTAssertEqual(entries.first?.subtitle, "exit code 3")
+            XCTAssertNil(refresh)
+            broken.fulfill()
+        }
+        wait(for: [live, broken], timeout: 5)
+    }
+}

@@ -143,7 +143,7 @@ final class MenuStore {
             // A failing menu says so instead of showing up empty.
             let entries = status == 0 ? Menu.parseOutput(out)
                 : [MenuEntry(name: "\(menu.name) failed", subtitle: status < 0 ? "could not run it" : "exit code \(status)",
-                             icon: "exclamationmark.triangle", value: "\u{0}")]
+                             icon: "nf-md-alert", value: "\u{0}")]
             DispatchQueue.main.async { done(entries, status == 0 ? Menu.refreshInterval(out) : nil) }
         }
     }
@@ -221,8 +221,13 @@ enum Shell {
     }
 }
 
-/// Icons named in menu files: an absolute or ~ path (app bundle or image file), a bundle id
-/// (contains a dot), a short non-ASCII string (nerd-font glyph or emoji), or an SF Symbol name.
+/// Icons named in menu files:
+///   nf-fa-cog       a Nerd Font glyph by name (www.nerdfonts.com/cheat-sheet), drawn in the theme font
+///   /path, ~/path   an app bundle's icon or an image file (square thumbnail)
+///   com.apple.Notes an app's icon by bundle id
+///   a short non-ASCII string: a glyph or emoji pasted as is
+///   anything else   an SF Symbol name
+/// Single-color icons (glyphs, SF Symbols) are template images, so a row can tint them.
 enum Icons {
     private static var cache: [String: NSImage] = [:]
     static func clearCache() { cache.removeAll() }
@@ -249,11 +254,29 @@ enum Icons {
             if path.hasSuffix(".app") { return NSWorkspace.shared.icon(forFile: path) }
             return thumbnail(path, side: theme.iconSize * 2)
         }
+        if spec.hasPrefix("nf-") {
+            guard let g = NerdGlyphs.glyph(spec) else { return glyph("•", theme: theme) }  // unknown name
+            return glyph(g, theme: theme)
+        }
         if spec.count <= 2, spec.unicodeScalars.contains(where: { !$0.isASCII }) { return glyph(spec, theme: theme) }
         if spec.contains("."), !spec.contains(" "), let i = app(bundleId: spec) { return i }
         let cfg = NSImage.SymbolConfiguration(pointSize: theme.iconSize * 0.7, weight: .regular)
-            .applying(.init(paletteColors: [theme.text]))
-        return NSImage(systemSymbolName: spec, accessibilityDescription: nil)?.withSymbolConfiguration(cfg)
+        let img = NSImage(systemSymbolName: spec, accessibilityDescription: nil)?.withSymbolConfiguration(cfg)
+        img?.isTemplate = true
+        return img
+    }
+
+    /// True when the theme font draws Nerd Font glyphs (checked with the gear, U+F013).
+    static func fontHasNerdGlyphs(_ theme: Theme) -> Bool {
+        var ch: [UniChar] = [0xF013], g: [CGGlyph] = [0]
+        return CTFontGetGlyphsForCharacters(theme.font(theme.iconSize) as CTFont, &ch, &g, 1) && g[0] != 0
+    }
+
+    /// Private Use Area code points are Nerd Font icons (single color); most emoji are not.
+    private static func isMonochrome(_ s: String) -> Bool {
+        s.unicodeScalars.allSatisfy { u in
+            (0xE000...0xF8FF).contains(u.value) || (0xF0000...0x10FFFD).contains(u.value) || !u.properties.isEmoji
+        }
     }
 
     /// Square, center-cropped thumbnail decoded at icon size (a 5K wallpaper stays cheap).
@@ -273,13 +296,28 @@ enum Icons {
         }
     }
 
+    /// Draws a glyph centered by its ink (not its text box) and scaled so its larger side
+    /// fills 80% of the icon square; glyphs from different icon sets then line up.
     private static func glyph(_ s: String, theme: Theme) -> NSImage {
-        let size = NSSize(width: theme.iconSize, height: theme.iconSize)
-        let str = NSAttributedString(string: s, attributes: [.font: theme.font(theme.iconSize * 0.8), .foregroundColor: theme.text])
-        return NSImage(size: size, flipped: false) { r in
-            let b = str.size()
-            str.draw(at: NSPoint(x: (r.width - b.width) / 2, y: (r.height - b.height) / 2))
+        let side = theme.iconSize, box = side * 0.8
+        let mono = isMonochrome(s)
+        let isNerd = s.unicodeScalars.contains { (0xE000...0xF8FF).contains($0.value) || $0.value >= 0xF0000 }
+        let text = isNerd && !fontHasNerdGlyphs(theme) ? "•" : s   // no Nerd Font: a dot, not a "?" box
+        func line(_ size: CGFloat) -> CTLine {
+            CTLineCreateWithAttributedString(NSAttributedString(string: text, attributes: [
+                .font: theme.font(size), .foregroundColor: mono ? NSColor.black : theme.text]))
+        }
+        let probe = CTLineGetBoundsWithOptions(line(side), .useGlyphPathBounds)
+        let scale = probe.width > 0 && probe.height > 0 ? box / max(probe.width, probe.height) : 0.8
+        let ln = line(side * scale)
+        let ink = CTLineGetBoundsWithOptions(ln, .useGlyphPathBounds)
+        let img = NSImage(size: NSSize(width: side, height: side), flipped: false) { r in
+            guard let ctx = NSGraphicsContext.current?.cgContext else { return false }
+            ctx.textPosition = CGPoint(x: (r.width - ink.width) / 2 - ink.minX, y: (r.height - ink.height) / 2 - ink.minY)
+            CTLineDraw(ln, ctx)
             return true
         }
+        img.isTemplate = mono
+        return img
     }
 }

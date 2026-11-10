@@ -3,40 +3,40 @@ width = 320
 
 [[entry]]
 name = "Apps"
-icon = "square.grid.3x3.fill"
+icon = "nf-md-apps"
 menu = "apps"
 
 [[entry]]
 name = "Learn"
-icon = "brain.head.profile"
+icon = "nf-md-brain"
 menu = "learn"
 
 [[entry]]
 name = "Appearance"
-icon = "paintpalette.fill"
+icon = "nf-md-palette"
 menu = "appearance"
 
 [[entry]]
 name = "Trigger"
-icon = "bolt.fill"
+icon = "nf-fa-rocket"
 menu = "trigger"
 
 [[entry]]
 name = "Setup"
-icon = "gearshape.fill"
+icon = "nf-fa-cog"
 menu = "setup"
 
 [[entry]]
 name = "Update"
-icon = "arrow.triangle.2.circlepath"
+icon = "nf-fa-refresh"
 menu = "update"
 
 [[entry]]
 name = "About"
-icon = "info.circle"
+icon = "nf-md-information_outline"
 menu = "about"
 
 [[entry]]
 name = "System"
-icon = "power"
+icon = "nf-md-power"
 menu = "system"

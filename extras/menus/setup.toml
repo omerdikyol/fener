@@ -5,37 +5,37 @@ width = 320
 [[entry]]
 name = "fener"
 subtitle = "config.toml"
-icon = "slider.horizontal.3"
+icon = "nf-md-tune"
 command = "mkdir -p ~/.config/fener && touch ~/.config/fener/config.toml && open -t ~/.config/fener/config.toml"
 
 [[entry]]
 name = "fener Menus"
-subtitle = "folder"
-icon = "folder"
+subtitle = "nf-fa-folder"
+icon = "nf-fa-folder"
 command = "open ~/.config/fener/menus"
 
 [[entry]]
 name = "Ghostty"
-icon = "terminal"
+icon = "nf-md-ghost"
 command = "open -t \"$HOME/Library/Application Support/com.mitchellh.ghostty/config\""
 
 [[entry]]
 name = "Karabiner"
-icon = "keyboard"
+icon = "nf-md-keyboard"
 command = "open -a Karabiner-Elements"
 
 [[entry]]
 name = "SketchyBar"
-icon = "menubar.rectangle"
+icon = "nf-md-dock_top"
 command = "open -t ~/.config/sketchybar/sketchybarrc"
 
 [[entry]]
 name = "Starship"
-icon = "sparkle"
+icon = "nf-md-star_shooting"
 command = "open -t ~/.config/starship.toml"
 
 [[entry]]
 name = "OmniWM"
 subtitle = "settings app (its file is strict)"
-icon = "rectangle.split.3x1"
+icon = "nf-md-view_quilt"
 command = "open -a OmniWM"

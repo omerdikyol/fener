@@ -2,26 +2,26 @@ width = 320
 
 [[entry]]
 name = "Region to Clipboard"
-icon = "rectangle.dashed"
+icon = "nf-md-selection_drag"
 command = "screencapture -i -c"
 
 [[entry]]
 name = "Region to Desktop"
-icon = "rectangle.dashed.badge.record"
+icon = "nf-md-selection"
 command = "screencapture -i \"$HOME/Desktop/Screenshot $(date '+%Y-%m-%d at %H.%M.%S').png\""
 
 [[entry]]
 name = "Window to Desktop"
-icon = "macwindow"
+icon = "nf-md-window_maximize"
 command = "screencapture -i -W -o \"$HOME/Desktop/Screenshot $(date '+%Y-%m-%d at %H.%M.%S').png\""
 
 [[entry]]
 name = "Screen to Desktop"
-icon = "display"
+icon = "nf-md-monitor"
 command = "screencapture \"$HOME/Desktop/Screenshot $(date '+%Y-%m-%d at %H.%M.%S').png\""
 
 [[entry]]
 name = "Record or More…"
 subtitle = "Screenshot app"
-icon = "record.circle"
+icon = "nf-md-record_rec"
 command = "open -a Screenshot"

@@ -315,7 +315,9 @@ final class Launcher: NSObject, NSWindowDelegate, NSTableViewDataSource, NSTable
 
     private func filter() {
         let new = mode.search(field.stringValue)
-        let key = { (i: Item) in i.id + "\u{1}" + i.title + "\u{1}" + i.subtitle }
+        let key = { (i: Item) in
+            [i.id, i.title, i.subtitle, i.accessory, i.icon.map { "\(ObjectIdentifier($0).hashValue)" } ?? ""].joined(separator: "\u{1}")
+        }
         let same = !new.isEmpty && new.map(key) == items.map(key) && !new.contains { $0.id.isEmpty }
         items = new
         if same {
@@ -390,6 +392,9 @@ private final class RowView: NSTableRowView {
         NSBezierPath(roundedRect: bounds.insetBy(dx: 0, dy: 1), xRadius: radius, yRadius: radius).fill()
     }
     override var isEmphasized: Bool { get { true } set {} }
+    // Keep cells in normal style when selected; otherwise template icons turn white and our
+    // own accent tint is ignored.
+    override var interiorBackgroundStyle: NSView.BackgroundStyle { .normal }
 }
 
 private final class Cell: NSView {
@@ -413,6 +418,7 @@ private final class Cell: NSView {
 
     func set(_ item: Item, selected: Bool) {
         icon.image = item.icon
+        icon.contentTintColor = selected ? theme.accent : theme.text  // only affects template icons
         let s = NSMutableAttributedString(string: item.title, attributes: [
             .font: theme.font(theme.fontSize), .foregroundColor: selected ? theme.accent : theme.text])
         if !item.subtitle.isEmpty {

@@ -101,8 +101,8 @@ func entryItem(_ e: MenuEntry, of m: Menu, score: Int) -> Item {
         let run = item.run
         item.accessory = "›"
         item.submenu = { Mode(prompt: "\(e.name)?", width: m.width) { _ in [
-            Item(id: "confirm:yes", title: "Yes", icon: sf("checkmark"), run: run),
-            Item(id: "confirm:no", title: "Cancel", icon: sf("xmark")),
+            Item(id: "confirm:yes", title: "Yes", icon: sf("nf-md-check"), run: run),
+            Item(id: "confirm:no", title: "Cancel", icon: sf("nf-md-close")),
         ] } }
     }
     return item
@@ -115,7 +115,7 @@ func searchMenus(_ q: String, entries: Bool) -> [Item] {
         let title = Menu.title(m.name)
         if let s = q.isEmpty ? 0 : Fuzzy.score(q, title) {
             out.append(Item(id: "menu:\(m.name)", title: title, subtitle: "menu", accessory: "›",
-                            icon: Icons.named(m.icon.isEmpty ? "list.bullet" : m.icon, theme: theme),
+                            icon: Icons.named(m.icon.isEmpty ? "nf-md-format_list_bulleted" : m.icon, theme: theme),
                             score: s, submenu: { menuMode(m) }))
         }
         guard entries, !q.isEmpty else { continue }
@@ -142,14 +142,14 @@ DispatchQueue.global(qos: .utility).async { _ = Emoji.all.count }  // build the 
 func sf(_ name: String) -> NSImage? { Icons.named(name, theme: theme) }
 
 func calcItem(_ a: Calc.Answer) -> Item {
-    Item(id: "calc", title: a.value, subtitle: a.detail + "  ·  ⏎ copies", icon: sf("equal.circle"),
+    Item(id: "calc", title: a.value, subtitle: a.detail + "  ·  ⏎ copies", icon: sf("nf-md-calculator"),
          run: { Clipboard.copyText(a.value) }, score: 10_000)
 }
 
 func confirm(_ a: SystemAction) -> Mode {
     Mode(prompt: "\(a.name)?") { _ in [
         Item(id: "confirm:yes", title: "Yes, \(a.name.lowercased())", icon: sf(a.icon), run: a.run),
-        Item(id: "confirm:no", title: "Cancel", icon: sf("xmark")),
+        Item(id: "confirm:no", title: "Cancel", icon: sf("nf-md-close")),
     ] }
 }
 
@@ -174,7 +174,7 @@ func clipboardItems(_ q: String) -> [Item] {
             title = String(c.text.split(whereSeparator: \.isNewline).first.map { $0.trimmingCharacters(in: .whitespaces) } ?? "").prefix(200).description
             let lines = c.text.split(whereSeparator: \.isNewline).count
             sub = (lines > 1 ? "\(lines) lines · " : "") + when
-            icon = sf("doc.text")
+            icon = sf("nf-md-text_box_outline")
         case .files:
             let paths = c.text.split(separator: "\n")
             title = paths.map { ($0 as NSString).lastPathComponent }.joined(separator: ", ")
@@ -194,8 +194,8 @@ func clipboardItems(_ q: String) -> [Item] {
     }
     if q.isEmpty {
         if !clipboard.clips.isEmpty {
-            let clear = SystemAction(name: "Clear Clipboard History", subtitle: "", icon: "trash", confirm: true) { clipboard.clear() }
-            out.append(Item(id: "clip:clear", title: clear.name, icon: sf("trash"), submenu: { confirm(clear) }))
+            let clear = SystemAction(name: "Clear Clipboard History", subtitle: "", icon: "nf-md-delete", confirm: true) { clipboard.clear() }
+            out.append(Item(id: "clip:clear", title: clear.name, icon: sf("nf-md-delete"), submenu: { confirm(clear) }))
         }
         return out
     }
@@ -238,6 +238,9 @@ func loadSettings() -> (Config, Theme, [String]) {
     } else if c.theme != "tokyo-night" {
         p.append("config.toml: theme \(c.theme) not found in \(themeURL.deletingLastPathComponent().path); using tokyo-night")
     }
+    if !Icons.fontHasNerdGlyphs(th) {
+        p.append("themes/\(c.theme).toml: font \"\(th.fontFamily)\" has no Nerd Font glyphs; menu icons show as dots")
+    }
     return (c, th, p)
 }
 
@@ -277,7 +280,7 @@ var prefixes: [(String, (String) -> [Item])] {
 
 func problemItems() -> [Item] {
     problems.map { m in
-        Item(id: "problem:" + m, title: m, subtitle: "", icon: sf("exclamationmark.triangle"),
+        Item(id: "problem:" + m, title: m, subtitle: "", icon: sf("nf-md-alert"),
              run: { NSWorkspace.shared.open(configDir) })
     }
 }

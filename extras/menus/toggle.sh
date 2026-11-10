@@ -10,12 +10,12 @@ if [ $# -eq 0 ]; then
     [ "$(mic)" = "0" ] && m="Muted" || m="On"
     awake && a="On" || a="Off"
     dark && d="On" || d="Off"
-    printf '{"name": "Microphone: %s", "value": "mic", "icon": "mic.fill"}\n' "$m"
-    printf '{"name": "Keep Awake: %s", "value": "awake", "icon": "cup.and.saucer.fill"}\n' "$a"
-    printf '{"name": "Dark Mode: %s", "value": "dark", "icon": "circle.lefthalf.filled"}\n' "$d"
+    printf '{"name": "Microphone: %s", "value": "mic", "icon": "nf-fa-microphone"}\n' "$m"
+    printf '{"name": "Keep Awake: %s", "value": "awake", "icon": "nf-md-coffee"}\n' "$a"
+    printf '{"name": "Dark Mode: %s", "value": "dark", "icon": "nf-md-theme_light_dark"}\n' "$d"
     if command -v sketchybar >/dev/null; then
         bar_hidden && b="Hidden" || b="Shown"
-        printf '{"name": "Menu Bar: %s", "value": "bar", "icon": "menubar.rectangle"}\n' "$b"
+        printf '{"name": "Menu Bar: %s", "value": "bar", "icon": "nf-md-dock_top"}\n' "$b"
     fi
     exit 0
 fi

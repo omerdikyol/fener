@@ -2,50 +2,50 @@ width = 320
 
 [[entry]]
 name = "Keybindings"
-icon = "keyboard"
+icon = "nf-md-keyboard"
 menu = "keybindings"
 
 [[entry]]
 name = "OmniWM"
-icon = "rectangle.split.3x1"
+icon = "nf-md-view_quilt"
 command = "open https://omniwm.app"
 
 [[entry]]
 name = "Ghostty"
-icon = "terminal"
+icon = "nf-md-ghost"
 command = "open https://ghostty.org/docs"
 
 [[entry]]
 name = "Karabiner"
-icon = "keyboard.badge.ellipsis"
+icon = "nf-md-keyboard_settings"
 command = "open https://karabiner-elements.pqrs.org/docs/"
 
 [[entry]]
 name = "SketchyBar"
-icon = "menubar.rectangle"
+icon = "nf-md-dock_top"
 command = "open https://felixkratz.github.io/SketchyBar/"
 
 [[entry]]
 name = "Homebrew"
-icon = "mug"
+icon = "nf-dev-homebrew"
 command = "open https://docs.brew.sh"
 
 [[entry]]
 name = "Neovim"
-icon = "chevron.left.forwardslash.chevron.right"
+icon = "nf-linux-neovim"
 command = "open https://neovim.io/doc/user/"
 
 [[entry]]
 name = "Zsh"
-icon = "number"
+icon = "nf-seti-shell"
 command = "open https://zsh.sourceforge.io/Doc/"
 
 [[entry]]
 name = "Starship"
-icon = "sparkle"
+icon = "nf-md-star_shooting"
 command = "open https://starship.rs/config/"
 
 [[entry]]
 name = "macOS Shortcuts"
-icon = "command"
+icon = "nf-fa-apple"
 command = "open https://support.apple.com/en-us/102650"

@@ -6,27 +6,27 @@ import AppKit
 struct SystemAction {
     let name: String
     let subtitle: String
-    let icon: String          // SF Symbol
+    let icon: String          // see Icons: a Nerd Font name such as nf-md-lock
     let confirm: Bool
     let run: () -> Void
 
     static let all: [SystemAction] = [
-        SystemAction(name: "Lock Screen", subtitle: "system", icon: "lock", confirm: false, run: lock),
-        SystemAction(name: "Sleep", subtitle: "system", icon: "moon", confirm: false) { pmset("sleepnow") },
-        SystemAction(name: "Sleep Display", subtitle: "system", icon: "display", confirm: false) { pmset("displaysleepnow") },
-        SystemAction(name: "Screensaver", subtitle: "system", icon: "sparkles.tv", confirm: false) {
+        SystemAction(name: "Lock Screen", subtitle: "system", icon: "nf-md-lock", confirm: false, run: lock),
+        SystemAction(name: "Sleep", subtitle: "system", icon: "nf-md-power_sleep", confirm: false) { pmset("sleepnow") },
+        SystemAction(name: "Sleep Display", subtitle: "system", icon: "nf-md-monitor_off", confirm: false) { pmset("displaysleepnow") },
+        SystemAction(name: "Screensaver", subtitle: "system", icon: "nf-md-monitor_star", confirm: false) {
             Shell.run("/usr/bin/open", ["-a", "ScreenSaverEngine"])
         },
-        SystemAction(name: "Restart", subtitle: "system", icon: "arrow.clockwise", confirm: true) {
+        SystemAction(name: "Restart", subtitle: "system", icon: "nf-md-restart", confirm: true) {
             osa("tell application \"System Events\" to restart")
         },
-        SystemAction(name: "Shut Down", subtitle: "system", icon: "power", confirm: true) {
+        SystemAction(name: "Shut Down", subtitle: "system", icon: "nf-md-power", confirm: true) {
             osa("tell application \"System Events\" to shut down")
         },
-        SystemAction(name: "Log Out", subtitle: "system", icon: "rectangle.portrait.and.arrow.right", confirm: true) {
+        SystemAction(name: "Log Out", subtitle: "system", icon: "nf-md-logout", confirm: true) {
             osa("tell application \"System Events\" to log out")
         },
-        SystemAction(name: "Empty Trash", subtitle: "system", icon: "trash", confirm: true) {
+        SystemAction(name: "Empty Trash", subtitle: "system", icon: "nf-md-delete", confirm: true) {
             osa("tell application \"Finder\" to empty trash")
         },
     ]

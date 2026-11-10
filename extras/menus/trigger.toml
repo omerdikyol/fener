@@ -2,25 +2,25 @@ width = 320
 
 [[entry]]
 name = "Toggle"
-icon = "switch.2"
+icon = "nf-md-toggle_switch"
 menu = "toggle"
 
 [[entry]]
 name = "Emoji"
-icon = "face.smiling"
+icon = "nf-md-emoticon_happy"
 menu = "emoji"
 
 [[entry]]
 name = "Clipboard History"
-icon = "list.clipboard.fill"
+icon = "nf-md-clipboard_text"
 menu = "clipboard"
 
 [[entry]]
 name = "Capture"
-icon = "camera.fill"
+icon = "nf-fa-camera"
 menu = "capture"
 
 [[entry]]
 name = "Speed Test"
-icon = "gauge.with.dots.needle.67percent"
+icon = "nf-md-speedometer"
 menu = "speedtest"

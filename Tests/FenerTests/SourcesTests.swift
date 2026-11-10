@@ -70,3 +70,37 @@ final class ExecutableMenuTests: XCTestCase {
         wait(for: [live, broken], timeout: 5)
     }
 }
+
+final class IconTests: XCTestCase {
+    func testNerdGlyphLookup() {
+        XCTAssertEqual(NerdGlyphs.glyph("nf-fa-cog"), "\u{f013}")
+        XCTAssertEqual(NerdGlyphs.glyph("fa-cog"), "\u{f013}")             // prefix optional
+        XCTAssertEqual(NerdGlyphs.glyph("nf-md-brain"), "\u{f09d1}")       // plane-15 code point
+        XCTAssertNil(NerdGlyphs.glyph("nf-fa-does_not_exist"))
+        XCTAssertGreaterThan(NerdGlyphs.codes.count, 10_000)
+    }
+
+    /// Every nf- name used in the sources and shipped menus must exist, or it would draw as a dot.
+    func testAllUsedNamesExist() throws {
+        let root = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
+        let re = try NSRegularExpression(pattern: "\"(nf-[a-z0-9_-]+)\\\\?\"")
+        var checked = 0
+        for dir in ["Sources/Fener", "extras/menus"] {
+            for f in try FileManager.default.contentsOfDirectory(atPath: root.appendingPathComponent(dir).path) where f != "NerdGlyphs.swift" {
+                let text = try String(contentsOf: root.appendingPathComponent(dir + "/" + f), encoding: .utf8)
+                for m in re.matches(in: text, range: NSRange(text.startIndex..., in: text)) {
+                    let name = String(text[Range(m.range(at: 1), in: text)!])
+                    XCTAssertNotNil(NerdGlyphs.glyph(name), "\(dir)/\(f): \(name)")
+                    checked += 1
+                }
+            }
+        }
+        XCTAssertGreaterThan(checked, 60)
+    }
+
+    func testFontCheck() {
+        XCTAssertTrue(Icons.fontHasNerdGlyphs(Theme()))                    // JetBrainsMono Nerd Font is installed here
+        var t = Theme(); t.fontFamily = "Helvetica"
+        XCTAssertFalse(Icons.fontHasNerdGlyphs(t))
+    }
+}

@@ -35,7 +35,7 @@ last=$(tail -n 1 "$HIST" 2>/dev/null | cut -f1)
 mbps() { awk -v b="$1" 'BEGIN { printf "%.1f", b / 1e6 }'; }
 
 if running; then
-    printf '{"name": "Testing…", "subtitle": "about 15 s", "icon": "gauge.with.dots.needle.33percent"}\n'
+    printf '{"name": "Testing…", "subtitle": "about 15 s", "icon": "nf-md-speedometer_slow"}\n'
     printf '{"refresh": 1}\n'
 fi
 
@@ -43,10 +43,10 @@ if [ -s "$HIST" ]; then
     set -- $(tail -n 1 "$HIST")
     ago=$(( ($(date +%s) - $1) / 60 ))
     [ $ago -lt 1 ] && when="just now" || when="$ago min ago"
-    printf '{"name": "↓ %s  ↑ %s Mbps", "subtitle": "%s", "value": "run", "icon": "gauge.with.dots.needle.67percent"}\n' \
+    printf '{"name": "↓ %s  ↑ %s Mbps", "subtitle": "%s", "value": "run", "icon": "nf-md-speedometer"}\n' \
         "$(mbps "$2")" "$(mbps "$3")" "$when"
     tail -n 20 "$HIST" | awk -F'\t' '{ d += $2; u += $3; n++ }
-        END { printf "{\"name\": \"avg ↓ %.1f  ↑ %.1f Mbps\", \"subtitle\": \"%d test%s\", \"value\": \"run\", \"icon\": \"chart.bar\"}\n", d / n / 1e6, u / n / 1e6, n, (n == 1 ? "" : "s") }'
+        END { printf "{\"name\": \"avg ↓ %.1f  ↑ %.1f Mbps\", \"subtitle\": \"%d test%s\", \"value\": \"run\", \"icon\": \"nf-md-chart_bar\"}\n", d / n / 1e6, u / n / 1e6, n, (n == 1 ? "" : "s") }'
 elif ! running; then
-    printf '{"name": "Run a speed test", "value": "run", "icon": "gauge.with.dots.needle.67percent"}\n'
+    printf '{"name": "Run a speed test", "value": "run", "icon": "nf-md-speedometer"}\n'
 fi

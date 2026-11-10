@@ -2,10 +2,10 @@ width = 320
 
 [[entry]]
 name = "Theme"
-icon = "paintpalette"
+icon = "nf-md-palette"
 menu = "theme"
 
 [[entry]]
 name = "Background"
-icon = "photo"
+icon = "nf-md-image"
 menu = "wallpaper"

@@ -133,7 +133,7 @@ final class AppProvider {
         let cfg = NSWorkspace.OpenConfiguration()
         cfg.activates = true
         NSWorkspace.shared.openApplication(at: URL(fileURLWithPath: app.path), configuration: cfg) { _, err in
-            if let err { FileHandle.standardError.write("launch failed: \(app.path): \(err)\n".data(using: .utf8)!) }
+            if let err { Log.error("launch failed: \(app.path): \(err.localizedDescription)") }
         }
     }
 }

@@ -132,7 +132,6 @@ final class MenuStore {
         }
         menus = found
         errors = errs
-        errs.forEach { FileHandle.standardError.write("fener: \($0)\n".data(using: .utf8)!) }
     }
 
     /// Runs an executable menu off the main thread and returns its entries on the main thread.
@@ -141,6 +140,7 @@ final class MenuStore {
         guard let exe = menu.executable else { return done(menu.entries, nil) }
         DispatchQueue.global(qos: .userInitiated).async {
             let (out, status) = Shell.run(capturing: exe.path, [], timeout: 5)
+            if status != 0 { Log.error("menu \(menu.name) failed with exit code \(status)") }
             // A failing menu says so instead of showing up empty.
             let entries = status == 0 ? Menu.parseOutput(out)
                 : [MenuEntry(name: "\(menu.name) failed", subtitle: status < 0 ? "could not run it" : "exit code \(status)",
@@ -173,9 +173,10 @@ enum Shell {
         p.environment = environment.merging(extraEnv) { $1 }
         p.standardInput = FileHandle.nullDevice
         p.standardOutput = FileHandle.nullDevice
-        do { try p.run() } catch {
-            FileHandle.standardError.write("fener: cannot run \(exe): \(error)\n".data(using: .utf8)!)
-        }
+        p.standardError = Log.handle()   // a failing menu command explains itself in the log
+        let shown = ([exe] + args).joined(separator: " ").prefix(200)
+        p.terminationHandler = { if $0.terminationStatus != 0 { Log.error("exit \($0.terminationStatus): \(shown)") } }
+        do { try p.run() } catch { Log.error("cannot run \(exe): \(error.localizedDescription)") }
     }
 
     static func sh(_ command: String, extraEnv: [String: String] = [:]) { run("/bin/sh", ["-c", command], extraEnv: extraEnv) }
@@ -212,7 +213,8 @@ enum Shell {
         p.environment = environment
         p.standardOutput = pipe
         p.standardInput = FileHandle.nullDevice
-        do { try p.run() } catch { return ("", -1) }
+        p.standardError = Log.handle()
+        do { try p.run() } catch { Log.error("cannot run \(exe): \(error.localizedDescription)"); return ("", -1) }
         let killer = DispatchWorkItem { if p.isRunning { p.terminate() } }
         DispatchQueue.global().asyncAfter(deadline: .now() + timeout, execute: killer)
         let data = pipe.fileHandleForReading.readDataToEndOfFile()

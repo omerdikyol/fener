@@ -9,7 +9,7 @@ BIN="$HOME/.local/bin/fener"
 PLIST="$HOME/Library/LaunchAgents/$LABEL.plist"
 
 swift build -c release
-mkdir -p "$HOME/.local/bin" "$HOME/Library/LaunchAgents"
+mkdir -p "$HOME/.local/bin" "$HOME/Library/LaunchAgents" "$HOME/Library/Logs/fener"
 install -m 755 .build/release/fener "$BIN"
 
 cat > "$PLIST" <<PLIST
@@ -22,6 +22,7 @@ cat > "$PLIST" <<PLIST
   <key>RunAtLoad</key><true/>
   <key>KeepAlive</key><dict><key>SuccessfulExit</key><false/></dict>
   <key>ProcessType</key><string>Interactive</string>
+  <key>StandardErrorPath</key><string>$HOME/Library/Logs/fener/launchd.log</string>
 </dict>
 </plist>
 PLIST

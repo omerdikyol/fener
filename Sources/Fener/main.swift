@@ -6,6 +6,7 @@ import AppKit
 // prints scan and search timings and exits.
 
 let args = CommandLine.arguments
+if args.count > 1, args[1] == "log" { exit(Log.show(follow: args.contains("-f"))) }
 if args.count > 1, IPC.commands.contains(args[1]) {
     exit(IPC.send(Array(args.dropFirst())))  // client: never touches NSApplication
 }
@@ -87,6 +88,8 @@ let activity = ProcessInfo.processInfo.beginActivity(options: .userInitiatedAllo
 
 let server = IPC.Server(path: IPC.socketPath, handle: handleCommand)
 if server == nil { exit(0) }  // lost a start-up race with another instance
+Log.info("started (pid \(getpid()), \(apps.apps.count) apps, \(menus.menus.count) menus)")
+problems.forEach { Log.error($0) }
 
 DispatchQueue.main.async {
     guard args.contains("--show") || args.contains("--demo") else { return }

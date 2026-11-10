@@ -53,7 +53,11 @@ final class Currency {
             DispatchQueue.main.async {
                 guard let self else { return }
                 self.fetching = false
-                guard (response as? HTTPURLResponse)?.statusCode == 200, let data, let (r, day) = Self.parse(data) else { return }
+                guard (response as? HTTPURLResponse)?.statusCode == 200, let data, let (r, day) = Self.parse(data) else {
+                    Log.error("exchange rates: download failed (\((response as? HTTPURLResponse)?.statusCode.description ?? "no response"))")
+                    return
+                }
+                Log.info("exchange rates updated (ECB \(day))")
                 try? data.write(to: self.cache, options: .atomic)
                 self.rates = r
                 self.date = day

@@ -49,7 +49,9 @@ func applySettings() {
     menus.load()
     snippets.load()
     config = c
-    problems = p + menus.errors
+    let newProblems = p + menus.errors
+    if newProblems != problems { newProblems.forEach { Log.error($0) } }
+    problems = newProblems
     clipboard.maxItems = c.clipboardMaxItems
     clipboard.maxItemBytes = c.clipboardMaxItemBytes
     if c.clipboardEnabled { clipboard.start() } else { clipboard.stop() }
@@ -95,7 +97,9 @@ func handleCommand(_ words: [String]) -> String {
     case "query":  // prints what the launcher would list: id, title, subtitle (tab-separated)
         let rows = root.search(words.dropFirst().joined(separator: " ")).prefix(20)
         return (["ok"] + rows.map { "\($0.id)\t\($0.title)\t\($0.subtitle)" }).joined(separator: "\n")
-    default: return "error: unknown command \(words[0])"
+    default:
+        Log.error("unknown command \(words[0])")
+        return "error: unknown command \(words[0])"
     }
     // Reply once the frame is committed, so the client's timing includes the render.
     launcher.panel.displayIfNeeded()

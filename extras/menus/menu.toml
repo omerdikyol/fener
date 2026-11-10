@@ -1,4 +1,4 @@
-# The main menu: `fener show menu` (bound to Caps+Shift+Space in extras/karabiner-rule.json).
+# The main menu, listed while the search is empty (config.toml: home = "menu").
 width = 320
 
 [[entry]]

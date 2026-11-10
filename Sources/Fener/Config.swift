@@ -3,6 +3,7 @@ import AppKit
 /// ~/.config/fener/config.toml. Every key is optional; unknown keys are reported, not ignored.
 ///
 ///     theme = "tokyo-night"          # themes/<name>.toml, or the built-in tokyo-night
+///     home = "menu"                  # menu shown while the search is empty; "" = app list
 ///     terminal = "open -na Ghostty --args --command={} --quit-after-last-window-closed=true"
 ///                                    # how `terminal = true` menu entries run; {} = the command
 ///
@@ -20,6 +21,7 @@ import AppKit
 ///     max_item_bytes = 5000000
 struct Config {
     var theme = "tokyo-night"
+    var home = "menu"   // menu listed while the search is empty; "" lists apps instead
     var terminal = "open -na Ghostty --args --command={} --quit-after-last-window-closed=true"
     var prefixes: [String: String] = ["calc": "=", "files": "/", "emoji": ":", "clipboard": "*", "menus": ">", "windows": ";"]
     var clipboardEnabled = true
@@ -37,6 +39,8 @@ struct Config {
             switch k {
             case "theme":
                 if let s = v as? String { c.theme = s } else { warn("theme must be a string") }
+            case "home":
+                if let s = v as? String { c.home = s } else { warn("home must be a string") }
             case "terminal":
                 if let s = v as? String, s.contains("{}") { c.terminal = s } else { warn("terminal must be a string containing {}") }
             case "prefixes":

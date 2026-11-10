@@ -1,25 +1,6 @@
 {
-  "description": "Hyper+Space: fener launcher; Hyper+Shift+Space: fener menu",
+  "description": "Hyper+Space: toggle the fener launcher",
   "manipulators": [
-    {
-      "type": "basic",
-      "from": {
-        "key_code": "spacebar",
-        "modifiers": {
-          "mandatory": [
-            "left_control",
-            "left_command",
-            "left_option",
-            "left_shift"
-          ]
-        }
-      },
-      "to": [
-        {
-          "shell_command": "$HOME/.local/bin/fener show menu"
-        }
-      ]
-    },
     {
       "type": "basic",
       "from": {

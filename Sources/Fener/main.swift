@@ -200,8 +200,9 @@ func emojiItems(_ q: String) -> [Item] {
 }
 
 /// Built-in modes for `fener show <name>` and `menu = "<name>"`; a user menu with the same name wins.
-func builtinMode(_ name: String) -> Mode? { name == "apps" ? root : builtins[name] }
+func builtinMode(_ name: String) -> Mode? { builtins[name] }
 let builtins: [String: Mode] = [
+    "apps": Mode(prompt: "Apps…", search: apps.search),
     "clipboard": Mode(prompt: "Clipboard…", search: clipboardItems),
     "system": Mode(prompt: "System…", search: systemItems),
     "emoji": Mode(prompt: "Emoji…", search: emojiItems),
@@ -271,11 +272,20 @@ func problemItems() -> [Item] {
     }
 }
 
-let root = Mode(prompt: "Apps…") { raw in
+/// The menu listed while the search is empty (config `home`), if it exists as a TOML menu.
+var homeMenu: Menu? {
+    guard !config.home.isEmpty, let m = menus.menus[config.home], m.executable == nil else { return nil }
+    return m
+}
+
+let root = Mode(prompt: "Search…", dynamicWidth: { homeMenu?.width }) { raw in
     for (p, search) in prefixes where raw.hasPrefix(p) {
         return search(String(raw.dropFirst(p.count)).trimmingCharacters(in: .whitespaces))
     }
-    if raw.isEmpty { return problemItems() + apps.search("") }
+    if raw.isEmpty {
+        guard let m = homeMenu else { return problemItems() + apps.search("") }
+        return problemItems() + rank(m.entries, "").map { entryItem($0.0, of: m, score: $0.1) }
+    }
     // Windows rank a bit below apps and menus: long titles match short queries by accident.
     let merged = merge(apps.search(raw), searchMenus(raw, entries: true), systemItems(raw),
                        windows.search(raw, all: false).map { var i = $0; i.score -= 10; return i })

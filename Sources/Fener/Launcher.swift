@@ -16,6 +16,7 @@ struct Item {
 struct Mode {
     var prompt: String
     var width: CGFloat? = nil   // overrides the theme width while this mode is open
+    var dynamicWidth: (() -> CGFloat?)? = nil  // asked each time, for widths that follow config
     var search: (String) -> [Item]
 }
 
@@ -42,6 +43,7 @@ final class Launcher: NSObject, NSWindowDelegate, NSTableViewDataSource, NSTable
     private var topY: CGFloat = 0
     private var centerX: CGFloat = 0
     private var mode: Mode { stack[stack.count - 1] }
+    private var modeWidth: CGFloat { mode.dynamicWidth?() ?? mode.width ?? theme.width }
     /// The open menu, if one is open above the root (kept across a theme rebuild).
     var openMenu: Mode? { stack.count > 1 ? stack.last : nil }
     var onShow: () -> Void = {}
@@ -182,7 +184,7 @@ final class Launcher: NSObject, NSWindowDelegate, NSTableViewDataSource, NSTable
         panel.setFrameOrigin(NSPoint(x: (vf.midX - theme.width / 2).rounded(), y: topY - panel.frame.height))
         if !field.stringValue.isEmpty { field.stringValue = "" }
         filter()
-        if (self.mode.width ?? theme.width) != panel.frame.width { resize() }
+        if modeWidth != panel.frame.width { resize() }
         // Start half visible: a fade from 0 spends its first composited frame fully transparent,
         // which delayed the panel by about a frame.
         panel.alphaValue = 0.5
@@ -328,7 +330,7 @@ final class Launcher: NSObject, NSWindowDelegate, NSTableViewDataSource, NSTable
     private func resize() {
         let rows = min(CGFloat(items.count), CGFloat(theme.visibleRows) + 0.5)
         let h = (chromeH - (items.isEmpty ? gap : 0) + rows * theme.rowHeight).rounded()
-        let w = mode.width ?? theme.width
+        let w = modeWidth
         var f = panel.frame
         if panel.isVisible || topY > 0 { f.origin.y = topY - h }
         if centerX > 0 { f.origin.x = (centerX - w / 2).rounded() }

@@ -169,11 +169,12 @@ final class Launcher: NSObject, NSWindowDelegate, NSTableViewDataSource, NSTable
         panel.setFrameOrigin(NSPoint(x: (vf.midX - theme.width / 2).rounded(), y: topY - panel.frame.height))
         if !field.stringValue.isEmpty { field.stringValue = "" }
         filter()
-        onShow()
         panel.alphaValue = 0
         panel.makeKeyAndOrderFront(nil)
         panel.makeFirstResponder(field)
-        animate(scaleFrom: 0.97, to: 1, alphaTo: 1, duration: 0.12) {}
+        // Refresh sources after the panel is up so the work never delays the first frame;
+        // cached results cover anything typed in the meantime.
+        animate(scaleFrom: 0.97, to: 1, alphaTo: 1, duration: 0.12) { [weak self] in self?.onShow() }
     }
 
     func hide() {

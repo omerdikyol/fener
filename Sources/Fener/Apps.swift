@@ -118,7 +118,8 @@ final class AppProvider {
     }
 
     private func item(_ app: AppEntry) -> Item {
-        Item(id: app.path, title: app.name, icon: icon(app.path)) { [weak self] in self?.launch(app) }
+        Item(id: app.path, title: app.name, icon: icon(app.path), run: { [weak self] in self?.launch(app) },
+             actions: { Act.app(app.path) })
     }
 
     private func icon(_ path: String) -> NSImage {

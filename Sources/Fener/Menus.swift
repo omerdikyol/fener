@@ -21,6 +21,7 @@ struct Menu {
     var entries: [MenuEntry]      // static entries (TOML menus)
     var executable: URL?          // dmenu-style menus
     var width: CGFloat? = nil     // panel width while this menu is open
+    var file: URL? = nil          // where it was loaded from
 
     /// Parses a TOML menu:
     ///     prompt = "Themes…"          # optional
@@ -124,10 +125,10 @@ final class MenuStore {
             guard !file.hasPrefix("."), !file.hasSuffix("~") else { continue }
             let name = url.deletingPathExtension().lastPathComponent
             if url.pathExtension == "toml" {
-                do { found[name] = try Menu.parse(name: name, toml: try String(contentsOf: url, encoding: .utf8)) }
+                do { found[name] = try Menu.parse(name: name, toml: try String(contentsOf: url, encoding: .utf8)); found[name]?.file = url }
                 catch { errs.append("menus/\(file): \(error)") }
             } else if fm.isExecutableFile(atPath: url.path) {
-                found[name] = Menu(name: name, prompt: Menu.defaultPrompt(name), entries: [], executable: url)
+                found[name] = Menu(name: name, prompt: Menu.defaultPrompt(name), entries: [], executable: url, file: url)
             }
         }
         menus = found

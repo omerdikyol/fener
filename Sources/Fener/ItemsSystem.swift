@@ -115,7 +115,7 @@ func processItems(_ q: String) -> [Item] {
     return procCache.value.1.compactMap { p in
         if let pids { guard pids.contains(p.pid) else { return nil } }
         guard p.pid != getpid(), let s = (q.isEmpty || pids != nil) ? 0 : Fuzzy.score(q, p.name) else { return nil }
-        return Item(id: "proc:\(p.pid)", title: p.name, subtitle: String(format: "pid %d · %.1f%% CPU · %d MB", p.pid, p.cpu, p.memMB),
+        var item = Item(id: "proc:\(p.pid)", title: p.name, subtitle: String(format: "pid %d · %.1f%% CPU · %d MB", p.pid, p.cpu, p.memMB),
                     accessory: "›", icon: sf("nf-md-chip"), score: s, submenu: {
             Mode(prompt: "Stop \(p.name)?") { _ in [
                 Item(id: "proc:term", title: "Quit (SIGTERM)", icon: sf("nf-md-close_circle"), run: { kill(p.pid, SIGTERM) }),
@@ -124,5 +124,7 @@ func processItems(_ q: String) -> [Item] {
                 Item(id: "proc:no", title: "Cancel", icon: sf("nf-md-close")),
             ] }
         })
+        item.actions = { [Act.make("Kill Now (SIGKILL)", "nf-md-skull") { kill(p.pid, SIGKILL) }, Act.copy("Copy PID", "\(p.pid)")] }
+        return item
     }.sorted { $0.score > $1.score }
 }

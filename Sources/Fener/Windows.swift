@@ -63,7 +63,19 @@ final class WindowProvider {
             let item = Item(id: "window:" + w.id, title: title, subtitle: sub,
                             icon: w.app?.bundleId.flatMap(Icons.app(bundleId:)),
                             run: { [tool, id = w.id] in if let tool { Shell.run(tool, ["window", "focus", id]) } },
-                            score: score - (w.isFocused == true ? 1000 : min(rank, 8)))
+                            score: score - (w.isFocused == true ? 1000 : min(rank, 8)),
+                            actions: { [tool, id = w.id] in
+                                guard let tool else { return [] }
+                                return [
+                                    Act.make("Close Window", "nf-md-window_close") { Shell.run(tool, ["window", "close", id]) },
+                                    Act.make("Bring Here", "nf-md-arrow_collapse_left") { Shell.run(tool, ["window", "summon-right", id]) },
+                                    Item(id: "action:move", title: "Move to Workspace", accessory: "›", icon: sf("nf-md-swap_horizontal"),
+                                         submenu: { Mode(prompt: "Move to workspace…") { _ in (1...9).map { n in
+                                             Act.make("Workspace \(n)", "nf-md-numeric_\(n)_box") { Shell.run(tool, ["window", "move-to-workspace", id, "\(n)"]) }
+                                         } } }),
+                                    Act.copy("Copy Title", title),
+                                ]
+                            })
             out.append(item)
         }
         return out

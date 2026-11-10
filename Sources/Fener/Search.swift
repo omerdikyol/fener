@@ -70,7 +70,7 @@ func minimumScore(_ query: String) -> Int {
 /// Ids worth remembering: not changing values (calculator, generated passwords) and not
 /// apps, which keep their own launch counts.
 func tracked(_ id: String) -> Bool {
-    !id.isEmpty && !id.hasPrefix("/") && !["calc", "gen:", "color:", "define", "confirm:", "quit:", "proc:", "problem:"]
+    !id.isEmpty && !id.hasPrefix("/") && !["calc", "gen:", "color:", "define", "confirm:", "quit:", "proc:", "problem:", "action:"]
         .contains(where: { id.hasPrefix($0) })
 }
 

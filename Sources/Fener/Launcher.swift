@@ -10,6 +10,8 @@ struct Item {
     var run: () -> Void = {}
     var score = 0          // used to merge results from several sources
     var submenu: (() -> Mode)? = nil  // set: Return opens this mode instead of running
+    /// Other things to do with this row, built only when asked: Cmd+K lists them, Cmd+Return runs the first.
+    var actions: (() -> [Item])? = nil
 }
 
 /// What the panel is searching: the root (apps, windows, menus) or one menu.
@@ -252,6 +254,8 @@ final class Launcher: NSObject, NSWindowDelegate, NSTableViewDataSource, NSTable
             if mods == .control, key == "n" || key == "j" { move(1) }
             else if mods == .control, key == "p" || key == "k" { move(-1) }
             else if mods == .command, let n = Int(key), (1...9).contains(n) { run(n - 1) }
+            else if mods == .command, key == "k" { showActions() }
+            else if mods == .command, e.keyCode == 36 || e.keyCode == 76 { runFirstAction() }
             else { return false }
         }
         return true
@@ -271,6 +275,26 @@ final class Launcher: NSObject, NSWindowDelegate, NSTableViewDataSource, NSTable
         table.scrollRowToVisible(r)
         // Selected title is drawn in the accent color; refresh the two affected cells.
         table.reloadData(forRowIndexes: IndexSet([old, r].filter { $0 >= 0 }), columnIndexes: [0])
+    }
+
+    /// Cmd+K: the selected row's actions as a small list (Backspace or Escape goes back).
+    private func showActions() {
+        guard items.indices.contains(table.selectedRow) else { return }
+        let item = items[table.selectedRow]
+        guard let list = item.actions?(), !list.isEmpty else { return }
+        onPick(item)
+        push(Mode(prompt: "\(item.title)…") { q in
+            list.filter { q.isEmpty || Fuzzy.score(q, $0.title) != nil }
+        })
+    }
+
+    /// Cmd+Return: the selected row's first action.
+    private func runFirstAction() {
+        guard items.indices.contains(table.selectedRow), let a = items[table.selectedRow].actions?().first else { return }
+        onPick(items[table.selectedRow])
+        if let sub = a.submenu { push(sub()); return }
+        hide()
+        a.run()
     }
 
     private func run(_ row: Int) {
@@ -293,6 +317,7 @@ final class Launcher: NSObject, NSWindowDelegate, NSTableViewDataSource, NSTable
     }
 
     func push(_ m: Mode) {
+        stack[stack.count - 1].query = field.stringValue   // restored when coming back
         stack.append(m)
         field.stringValue = m.query
         setPlaceholder()
@@ -304,6 +329,8 @@ final class Launcher: NSObject, NSWindowDelegate, NSTableViewDataSource, NSTable
         guard stack.count > 1 else { return }
         stack.removeLast()
         setPlaceholder()
+        field.stringValue = mode.query
+        field.currentEditor()?.selectedRange = NSRange(location: (mode.query as NSString).length, length: 0)
         filter()
         resize()
     }
@@ -429,7 +456,8 @@ private final class Cell: NSView {
                 .font: theme.font(theme.fontSize - 2), .foregroundColor: theme.muted]))
         }
         title.attributedStringValue = s
-        accessory.stringValue = item.accessory
+        // A row with actions shows the shortcut while selected, unless it already shows "›".
+        accessory.stringValue = item.accessory.isEmpty && selected && item.actions != nil ? "⌘K" : item.accessory
         needsLayout = true
     }
 
@@ -438,7 +466,7 @@ private final class Cell: NSView {
         let h = bounds.height, w = bounds.width, i = theme.iconSize
         icon.frame = NSRect(x: 14, y: ((h - i) / 2).rounded(), width: i, height: i)
         let x = 14 + i + 12
-        title.frame = NSRect(x: x, y: ((h - 18) / 2).rounded(), width: w - x - 36, height: 18)
-        accessory.frame = NSRect(x: w - 32, y: ((h - 18) / 2).rounded(), width: 20, height: 18)
+        title.frame = NSRect(x: x, y: ((h - 18) / 2).rounded(), width: w - x - 48, height: 18)
+        accessory.frame = NSRect(x: w - 44, y: ((h - 18) / 2).rounded(), width: 32, height: 18)
     }
 }

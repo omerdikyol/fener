@@ -10,7 +10,7 @@ import CoreServices
 ///   {datetime}   2026-11-11 14:05           {date:EEE d MMM}  any DateFormatter pattern
 /// Unknown {words} are left as they are.
 final class Snippets {
-    struct Snippet: Equatable { let name: String; let text: String }
+    struct Snippet: Equatable { let name: String; let text: String; var url = URL(fileURLWithPath: "/") }
     let dir: URL
     private(set) var all: [Snippet] = []
 
@@ -20,7 +20,7 @@ final class Snippets {
         let fm = FileManager.default
         all = ((try? fm.contentsOfDirectory(at: dir, includingPropertiesForKeys: nil)) ?? [])
             .filter { !$0.lastPathComponent.hasPrefix(".") && !$0.hasDirectoryPath }
-            .compactMap { u in (try? String(contentsOf: u, encoding: .utf8)).map { Snippet(name: u.deletingPathExtension().lastPathComponent, text: $0) } }
+            .compactMap { u in (try? String(contentsOf: u, encoding: .utf8)).map { Snippet(name: u.deletingPathExtension().lastPathComponent, text: $0, url: u) } }
             .sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
     }
 

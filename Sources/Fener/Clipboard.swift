@@ -172,6 +172,12 @@ final class Clipboard {
         if let img = c.image { try? FileManager.default.removeItem(at: images.appendingPathComponent(img)) }
     }
 
+    func delete(_ id: String) {
+        guard let i = clips.firstIndex(where: { $0.id == id }) else { return }
+        remove(i)
+        save()
+    }
+
     func clear() {
         while !clips.isEmpty { remove(0) }
         save()

@@ -84,3 +84,24 @@ final class SearchQualityTests: XCTestCase {
         XCTAssertFalse(tracked(""))
     }
 }
+
+final class ActionTests: XCTestCase {
+    func testFileActions() {
+        XCTAssertEqual(Act.file("/tmp/x.txt").map(\.title), ["Show in Finder", "Quick Look", "Copy Path", "Copy File"])
+        XCTAssertEqual(Act.url("https://a.b").map(\.title), ["Copy URL"])
+        XCTAssertTrue(Act.file("/tmp").allSatisfy { $0.id.hasPrefix("action:") && !tracked($0.id) })
+    }
+
+    func testAppActionsIncludeQuitOnlyWhenRunning() {
+        let finder = NSWorkspace.shared.runningApplications.first { $0.bundleIdentifier == "com.apple.finder" }?.bundleURL?.path
+        if let finder { XCTAssertTrue(Act.app(finder).map(\.title).contains("Quit")) }
+        XCTAssertEqual(Act.app("/Applications/Not Running Here.app").map(\.title), ["Show in Finder", "Copy Path"])
+    }
+
+    func testMenuEntryActions() throws {
+        var m = try Menu.parse(name: "t", toml: "[[entry]]\nname = \"Run\"\ncommand = \"echo hi\"")
+        XCTAssertNil(entryItem(m.entries[0], of: m, score: 0).actions)          // no file: nothing to edit
+        m.file = URL(fileURLWithPath: "/tmp/t.toml")
+        XCTAssertEqual(entryItem(m.entries[0], of: m, score: 0).actions?().map(\.title), ["Edit Menu File", "Copy Command"])
+    }
+}

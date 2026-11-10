@@ -33,5 +33,6 @@ var quicklinks = Quicklinks()
 func linkItem(_ link: Quicklink, _ q: String, score: Int) -> Item {
     Item(id: "link:" + link.keyword, title: q.isEmpty ? link.name : "Search \(link.name) for “\(q)”",
          subtitle: q.isEmpty ? "\(link.keyword) <query>" : link.keyword, icon: sf(link.icon),
-         run: { if let u = link.url(for: q) { NSWorkspace.shared.open(u) } }, score: score)
+         run: { if let u = link.url(for: q) { NSWorkspace.shared.open(u) } }, score: score,
+         actions: { link.url(for: q).map { Act.url($0.absoluteString) } ?? [] })
 }

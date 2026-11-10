@@ -34,6 +34,13 @@ func menuMode(_ m: Menu) -> Mode {
 func entryItem(_ e: MenuEntry, of m: Menu, score: Int) -> Item {
     var item = Item(id: "menu:\(m.name):\(e.name)", title: e.name, subtitle: e.subtitle,
                     accessory: e.menu.isEmpty ? "" : "›", icon: Icons.named(e.icon, theme: theme), score: score)
+    if let file = m.file {
+        item.actions = {
+            var a = [Act.make("Edit Menu File", "nf-md-pencil") { Shell.run("/usr/bin/open", ["-t", file.path]) }]
+            if !e.command.isEmpty { a.append(Act.copy("Copy Command", e.command)) }
+            return a
+        }
+    }
     let choice = e.value.isEmpty ? e.name : e.value
     let env = ["FENER_MENU": m.name, "FENER_CHOICE": choice]
     if !e.menu.isEmpty {

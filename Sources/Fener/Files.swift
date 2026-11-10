@@ -25,7 +25,8 @@ final class FileSearch {
             let dir = (path as NSString).deletingLastPathComponent
             return Item(id: "file:" + path, title: (path as NSString).lastPathComponent,
                         subtitle: dir.hasPrefix(home) ? "~" + dir.dropFirst(home.count) : dir,
-                        icon: icon(path), run: { NSWorkspace.shared.open(URL(fileURLWithPath: path)) }, score: score)
+                        icon: icon(path), run: { NSWorkspace.shared.open(URL(fileURLWithPath: path)) }, score: score,
+                        actions: { Act.file(path) })
         }
     }
 

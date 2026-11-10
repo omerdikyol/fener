@@ -9,7 +9,9 @@ func snippetItems(_ q: String) -> [Item] {
         guard let s = q.isEmpty ? 0 : Fuzzy.score(q, sn.name) else { return nil }
         let first = sn.text.split(whereSeparator: \.isNewline).first.map(String.init) ?? ""
         return Item(id: "snippet:" + sn.name, title: sn.name, subtitle: first, icon: sf("nf-md-text_box_edit"),
-                    run: { Clipboard.copyText(Snippets.expand(sn.text)) }, score: s)
+                    run: { Clipboard.copyText(Snippets.expand(sn.text)) }, score: s,
+                    actions: { [Act.make("Edit Snippet", "nf-md-pencil") { Shell.run("/usr/bin/open", ["-t", sn.url.path]) },
+                                Act.copy("Copy Raw Text", sn.text)] })
     }.sorted { $0.score > $1.score }
 }
 
@@ -57,7 +59,12 @@ func clipboardItems(_ q: String) -> [Item] {
             guard let s = Fuzzy.score(q, c.kind == .image ? title : String(c.text.prefix(300))) else { continue }
             score = s
         }
-        out.append(Item(id: "clip:" + c.id, title: title, subtitle: sub, icon: icon, run: { clipboard.copy(c) }, score: score))
+        out.append(Item(id: "clip:" + c.id, title: title, subtitle: sub, icon: icon, run: { clipboard.copy(c) }, score: score,
+                        actions: {
+                            var a = [Act.make("Delete from History", "nf-md-delete") { clipboard.delete(c.id) }]
+                            if c.kind == .files, let first = c.text.split(separator: "\n").first { a.append(Act.file(String(first))[0]) }
+                            return a
+                        }))
     }
     if q.isEmpty {
         if !clipboard.clips.isEmpty {
@@ -72,7 +79,7 @@ func clipboardItems(_ q: String) -> [Item] {
 func emojiItems(_ q: String) -> [Item] {
     Emoji.search(q).map { e in
         Item(id: "emoji:" + e.code, title: e.name, subtitle: e.code, icon: Icons.named(e.char, theme: theme),
-             run: { Clipboard.copyText(e.char) })
+             run: { Clipboard.copyText(e.char) }, actions: { [Act.copy("Copy Name", e.name), Act.copy("Copy Code Point", e.code)] })
     }
 }
 

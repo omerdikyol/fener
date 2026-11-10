@@ -78,6 +78,7 @@ func applySettings() {
 func makeLauncher() -> Launcher {
     let l = Launcher(theme: theme, root: root)
     l.onShow = { apps.refresh(); windows.refresh(); menus.load(); snippets.load(); refreshBrowserAndProjects() }
+    l.onPick = { if tracked($0.id) { apps.frecency.bump($0.id) } }
     l.prewarm()
     return l
 }

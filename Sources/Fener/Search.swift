@@ -60,6 +60,25 @@ func aliasItem(_ word: String, _ target: String) -> Item? {
     return app
 }
 
+/// The match quality non-app rows need in the global search: about a word start or a run of
+/// consecutive letters per typed character, so one or two letters do not pull in scattered
+/// matches from every bookmark and settings pane.
+func minimumScore(_ query: String) -> Int {
+    18 * min(8, query.filter { $0 != " " }.count)
+}
+
+/// Ids worth remembering: not changing values (calculator, generated passwords) and not
+/// apps, which keep their own launch counts.
+func tracked(_ id: String) -> Bool {
+    !id.isEmpty && !id.hasPrefix("/") && !["calc", "gen:", "color:", "define", "confirm:", "quit:", "proc:", "problem:"]
+        .contains(where: { id.hasPrefix($0) })
+}
+
+func usageBoost(_ id: String) -> Int {
+    guard tracked(id) else { return 0 }
+    return Int(12 * log2(1 + apps.frecency.value(id)))
+}
+
 /// The menu listed while the search is empty (config `home`), if it exists as a TOML menu.
 var homeMenu: Menu? {
     guard !config.home.isEmpty, let m = menus.menus[config.home], m.executable == nil else { return nil }
@@ -89,14 +108,25 @@ let root = Mode(prompt: "Search…", dynamicWidth: { homeMenu?.width }) { raw in
     if let (link, q) = quicklinks.match(raw) {
         if q.isEmpty { links.append(linkItem(link, "", score: 0)) } else { top.append(linkItem(link, q, score: 10_000)) }
     }
-    let merged = merge(apps.search(raw), searchMenus(raw, entries: true), systemItems(raw), links,
-                       snippetItems(raw).map { var i = $0; i.score -= 2; i.subtitle = "snippet"; return i },
-                       settingsItems(raw).map { var i = $0; i.score -= 3; return i },
-                       projectItems(raw).map { var i = $0; i.score -= 4; i.subtitle = "VS Code · " + i.subtitle; return i },
-                       bookmarkItems(raw).map { var i = $0; i.score -= 6; return i },
-                       // Generators only for a clear word ("uuid", "password 24"), not stray letters.
-                       (raw.count >= 3 ? generatorItems(raw) : []).filter { $0.score > 40 }.map { var i = $0; i.score -= 5; return i },
-                       windows.search(raw, all: false).map { var i = $0; i.score -= 10; return i })
+    // Apps compete on their own; every other source must clear a quality bar and then gets
+    // the same usage boost apps have, so rows you pick often rise.
+    func other(_ items: [Item], penalty: Int, subtitle: ((String) -> String)? = nil) -> [Item] {
+        items.filter { $0.score >= minimumScore(raw) }.map { i in
+            var i = i
+            i.score += usageBoost(i.id) - penalty
+            if let subtitle { i.subtitle = subtitle(i.subtitle) }
+            return i
+        }
+    }
+    let merged = merge(apps.search(raw), links,
+                       other(searchMenus(raw, entries: true), penalty: 0),
+                       other(systemItems(raw), penalty: 0),
+                       other(snippetItems(raw), penalty: 2, subtitle: { _ in "snippet" }),
+                       other(settingsItems(raw), penalty: 3),
+                       other(projectItems(raw), penalty: 4, subtitle: { "VS Code · " + $0 }),
+                       other(generatorItems(raw), penalty: 5),
+                       other(bookmarkItems(raw), penalty: 6),
+                       other(windows.search(raw, all: false), penalty: 10))
     // Last row: search the web with the default engine (it only opens the browser).
     let web = quicklinks.defaultEngine.map { [linkItem($0, raw, score: Int.min)] } ?? []
     return top + merged + web

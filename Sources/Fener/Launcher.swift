@@ -49,6 +49,7 @@ final class Launcher: NSObject, NSWindowDelegate, NSTableViewDataSource, NSTable
     /// The open menu, if one is open above the root (kept across a theme rebuild).
     var openMenu: Mode? { stack.count > 1 ? stack.last : nil }
     var onShow: () -> Void = {}
+    var onPick: (Item) -> Void = { _ in }   // a row was run or opened (usage tracking)
 
     // Vertical metrics: padding, search line, gap, list, padding.
     private var pad: CGFloat { theme.padding }
@@ -275,6 +276,7 @@ final class Launcher: NSObject, NSWindowDelegate, NSTableViewDataSource, NSTable
     private func run(_ row: Int) {
         guard items.indices.contains(row) else { return }
         let item = items[row]
+        onPick(item)
         if let sub = item.submenu { push(sub()); return }
         hide()
         item.run()

@@ -1,10 +1,11 @@
 import AppKit
 
-/// Fuzzy-ranks menu entries; empty query keeps file order.
-func rank(_ entries: [MenuEntry], _ q: String) -> [(MenuEntry, Int)] {
+/// Fuzzy-ranks menu entries; empty query keeps file order. Subtitles count inside a menu,
+/// but not in the global search, where they surfaced unrelated rows.
+func rank(_ entries: [MenuEntry], _ q: String, subtitles: Bool = true) -> [(MenuEntry, Int)] {
     if q.isEmpty { return entries.enumerated().map { ($1, -$0) } }
     return entries.compactMap { e in
-        [Fuzzy.score(q, e.name), Fuzzy.score(q, e.subtitle)].compactMap { $0 }.max().map { (e, $0) }
+        [Fuzzy.score(q, e.name), subtitles ? Fuzzy.score(q, e.subtitle) : nil].compactMap { $0 }.max().map { (e, $0) }
     }.sorted { $0.1 > $1.1 }
 }
 
@@ -67,7 +68,7 @@ func searchMenus(_ q: String, entries: Bool) -> [Item] {
                             score: s, submenu: { menuMode(m) }))
         }
         guard entries, !q.isEmpty else { continue }
-        for (e, s) in rank(m.entries, q) {
+        for (e, s) in rank(m.entries, q, subtitles: false) {
             var item = entryItem(e, of: m, score: s - 4)
             if item.subtitle.isEmpty { item.subtitle = title }
             out.append(item)

@@ -64,3 +64,23 @@ final class ToolsTests: XCTestCase {
         XCTAssertTrue(d.contains { $0.id == Audio.defaultDevice(input: false) })
     }
 }
+
+final class SearchQualityTests: XCTestCase {
+    func testQualityBar() {
+        XCTAssertEqual(minimumScore("a"), 18)
+        XCTAssertEqual(minimumScore("sys set"), 108)          // spaces do not count
+        XCTAssertEqual(minimumScore("a very long query here"), 144)
+        // A word-start match clears the bar; letters scattered through a long title do not.
+        XCTAssertGreaterThanOrEqual(Fuzzy.score("key", "Keyboard")!, minimumScore("key"))
+        XCTAssertLessThan(Fuzzy.score("nt", "Printers & Scanners") ?? 0, minimumScore("nt"))
+    }
+
+    func testTrackedIds() {
+        XCTAssertTrue(tracked("menu:workspace:Workspace 3"))
+        XCTAssertTrue(tracked("pane:com.apple.Keyboard-Settings.extension"))
+        XCTAssertFalse(tracked("/Applications/Safari.app"))   // apps count launches themselves
+        XCTAssertFalse(tracked("calc"))
+        XCTAssertFalse(tracked("gen:Password"))
+        XCTAssertFalse(tracked(""))
+    }
+}

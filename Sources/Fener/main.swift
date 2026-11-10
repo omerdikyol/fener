@@ -7,6 +7,14 @@ import AppKit
 
 let args = CommandLine.arguments
 if args.count > 1, args[1] == "log" { exit(Log.show(follow: args.contains("-f"))) }
+if args.count > 1, args[1] == "config" {   // fener config [defaults]
+    if args.count > 2, args[2] == "defaults" { print(DefaultConfig.text, terminator: ""); exit(0) }
+    let dir = URL(fileURLWithPath: NSHomeDirectory()).appendingPathComponent(".config/fener")
+    print("settings:    \(dir.path)/config.toml   (edit; applies on save)")
+    print("all options: \(dir.path)/config.reference.toml   (reference, rewritten on start)")
+    print("also:        menus/, themes/, snippets/, quicklinks.toml in the same folder")
+    exit(0)
+}
 if args.count > 1, IPC.commands.contains(args[1]) {
     exit(IPC.send(Array(args.dropFirst())))  // client: never touches NSApplication
 }
@@ -64,6 +72,7 @@ refreshBrowserAndProjects()
 windows.refresh()
 
 try? FileManager.default.createDirectory(at: configDir, withIntermediateDirectories: true)
+writeConfigFiles()
 let watcher = FolderWatcher(configDir.resolvingSymlinksInPath()) { applySettings() }
 
 if args.contains("--demo") {

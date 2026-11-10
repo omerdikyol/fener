@@ -80,6 +80,19 @@ func applySettings() {
     }
 }
 
+/// Writes config.reference.toml (every option with its default; never read) and, on a first
+/// run, config.toml with the same defaults, so every setting can be found and edited in a file.
+func writeConfigFiles() {
+    let ref = configDir.appendingPathComponent("config.reference.toml")
+    let text = DefaultConfig.referenceHeader + DefaultConfig.text
+    if (try? String(contentsOf: ref, encoding: .utf8)) != text { try? text.write(to: ref, atomically: true, encoding: .utf8) }
+    let cfg = configDir.appendingPathComponent("config.toml")
+    if !FileManager.default.fileExists(atPath: cfg.path) {
+        try? DefaultConfig.text.write(to: cfg, atomically: true, encoding: .utf8)
+        Log.info("created config.toml with the default settings")
+    }
+}
+
 /// Applies [panel], [files], [apps] and [learning] to the parts that use them.
 func configureBehavior(_ c: Config) {
     launcher.behavior = PanelBehavior(position: c.panelPosition, screen: c.panelScreen, closeOnBlur: c.closeOnBlur,
@@ -132,8 +145,10 @@ func handleCommand(_ words: [String]) -> String {
         if !problems.isEmpty { return "error: " + problems.joined(separator: "; ") }
     case "ping": break
     case "pick-color": pickColor()
-    case "query":  // prints what the launcher would list: id, title, subtitle (tab-separated)
-        let rows = root.search(words.dropFirst().joined(separator: " ")).prefix(20)
+    case "query":  // prints what the launcher would list: id, title, subtitle (tab-separated); "@view text" searches a built-in view
+        var rest = Array(words.dropFirst()), mode = root
+        if let w = rest.first, w.hasPrefix("@"), let m = builtinMode(String(w.dropFirst())) { mode = m; rest.removeFirst() }
+        let rows = mode.search(rest.joined(separator: " ")).prefix(40)
         return (["ok"] + rows.map { "\($0.id)\t\($0.title)\t\($0.subtitle)" }).joined(separator: "\n")
     default:
         Log.error("unknown command \(words[0])")

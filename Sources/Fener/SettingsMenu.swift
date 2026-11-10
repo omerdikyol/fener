@@ -122,8 +122,11 @@ func settingsMenuItems(_ q: String) -> [Item] {
                 setSetting("learning", "search_half_life_days", .double($0)) },
         ]),
         ("Files fener uses", [
-            Item(id: "pref:open-config", title: "Open config.toml", subtitle: "every option, with comments", icon: sf("nf-md-file_cog"),
+            Item(id: "pref:open-config", title: "Open config.toml", subtitle: "your settings; changes apply on save", icon: sf("nf-md-file_cog"),
                  run: { Editors.current.open(configDir.appendingPathComponent("config.toml").path) }),
+            Item(id: "pref:open-reference", title: "All options", subtitle: "config.reference.toml: every key with its default",
+                 icon: sf("nf-md-book_open_variant"),
+                 run: { Editors.current.open(configDir.appendingPathComponent("config.reference.toml").path) }),
             Item(id: "pref:open-folder", title: "Open the config folder", subtitle: "menus, themes, snippets, quicklinks", icon: sf("nf-fa-folder"),
                  run: { NSWorkspace.shared.open(configDir) }),
             Item(id: "pref:open-log", title: "Show the log", icon: sf("nf-md-text_box_search"), run: { Editors.current.open(Log.file.path) }),

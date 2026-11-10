@@ -5,7 +5,7 @@ import AppKit
 ///     theme = "tokyo-night"          # themes/<name>.toml, or the built-in tokyo-night
 ///     home = "menu"                  # menu shown while the search is empty; "" = app list
 ///     learn_queries = true           # rank rows you picked for the same text first; Recently Used
-///     terminal = "open -na Ghostty --args --command={} --quit-after-last-window-closed=true"
+///     terminal_command = "open -na Ghostty --args --command={} --quit-after-last-window-closed=true"
 ///                                    # how `terminal = true` menu entries run; {} = the command
 ///
 ///     [prefixes]                     # typed first in the search field to pick a source
@@ -57,7 +57,7 @@ import AppKit
 ///     [learning]
 ///     usage_half_life_days = 7       # how fast picks stop counting
 ///     search_half_life_days = 14     # how fast learned searches fade
-struct Config {
+struct Config: Equatable {
     var theme = "tokyo-night"
     var learnQueries = true   // learn which row is picked for which typed text; Recently Used
     var home = "menu"   // menu listed while the search is empty; "" lists apps instead
@@ -117,8 +117,8 @@ struct Config {
                 if let b = v as? Bool { c.learnQueries = b } else { warn("learn_queries must be true or false") }
             case "home":
                 if let s = v as? String { c.home = s } else { warn("home must be a string") }
-            case "terminal":
-                if let s = v as? String, s.contains("{}") { c.terminal = s } else { warn("terminal must be a string containing {}") }
+            case "terminal_command", "terminal":   // "terminal" is the old name, still accepted
+                if let s = v as? String, s.contains("{}") { c.terminal = s } else { warn("\(k) must be a string containing {}") }
             case "prefixes":
                 guard let p = v as? [String: Any] else { warn("[prefixes] must be a table"); continue }
                 for (name, value) in p {

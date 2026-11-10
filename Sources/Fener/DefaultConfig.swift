@@ -1,0 +1,95 @@
+// The full default config.toml, with comments. extras/config.toml is the same text (a test
+// checks); edit both together. fener writes it as config.reference.toml on every start, and
+// as config.toml when there is none yet.
+enum DefaultConfig {
+    static let text = #"""
+# fener configuration: ~/.config/fener/config.toml
+# Every key is optional; these are the defaults. Saving the file applies it at once.
+
+# A file in ~/.config/fener/themes/<name>.toml, or the built-in "tokyo-night".
+theme = "tokyo-night"
+
+# Learn which row you pick for which typed text ("g" then Ghostty puts Ghostty first for
+# "g"), and keep the last 10 picks for Find > Recently Used. Only picks are recorded, on
+# this Mac. false: learn nothing. System > Forget Search History clears it.
+learn_queries = true
+
+# Menu listed while the search is empty (menus/<name>.toml). "" lists apps instead.
+home = "menu"
+
+# How menu entries with `terminal = true` run: {} becomes "/bin/sh <script>".
+# The default opens a new Ghostty window that waits for Return when the command ends.
+terminal_command = "open -na Ghostty --args --command={} --quit-after-last-window-closed=true"
+
+# Typed first in the search field to search one source. "" turns a prefix off.
+[prefixes]
+calc = "="
+files = "/"
+emoji = ":"
+clipboard = "*"
+menus = ">"
+windows = ";"
+snippets = "!"
+
+# Typing an alias exactly opens a menu, a built-in view or an app.
+[aliases]
+# ws = "workspace"
+# vol = "audio"
+# code = "Visual Studio Code"
+
+# Currency conversion ("100 usd to try") uses the European Central Bank's daily reference
+# rates. fener downloads that public file only when you type a conversion and its copy is
+# more than a day old. false: never.
+[currency]
+enabled = true
+
+# Clipboard history is stored encrypted (key in your Keychain) in
+# ~/Library/Application Support/fener/clipboard and excluded from backups.
+[clipboard]
+enabled = true
+max_items = 200
+max_item_bytes = 5000000
+# Items older than this are deleted.
+keep_days = 30
+# Never record what is copied while one of these apps is in front (bundle ids or names),
+# for password managers that do not mark their copies as concealed.
+ignore_apps = []
+
+# Where and how the panel appears.
+[panel]
+position = "center"        # center | upper | top
+screen = "mouse"           # mouse | focused (the front window's screen) | main (with the menu bar)
+close_on_blur = true       # hide when another window takes focus
+animation = true
+animation_ms = 120         # opening; closing takes two thirds of it
+
+# What the main search lists. Remove a name to leave that source out.
+[search]
+sources = ["apps", "menus", "system", "snippets", "settings", "projects", "generators", "bookmarks", "windows"]
+web_fallback = true        # the "Search <engine> for …" row at the bottom
+
+[files]
+roots = ["~"]              # where file search and Recent Files look
+limit = 60
+recent_days = 14
+screenshot_thumbnails = 40
+
+[apps]
+folders = ["/Applications", "/System/Applications", "~/Applications"]
+browser = "helium"         # bookmarks: helium | chrome | brave | arc | edge | vivaldi | chromium | none
+editor = "vscode"          # projects and Edit actions: vscode | cursor | vscodium | windsurf | textedit
+terminal = "Ghostty"       # "Open in …" actions: an app name
+
+[learning]
+usage_half_life_days = 7   # how fast picks stop counting
+search_half_life_days = 14 # how fast learned searches fade
+
+"""#
+
+    static let referenceHeader = """
+    # fener: every option with its default value.
+    # fener rewrites this file on every start and never reads it. Copy what you want to
+    # change into config.toml (same folder); changes there apply as soon as you save.
+
+    """
+}

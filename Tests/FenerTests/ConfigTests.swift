@@ -155,4 +155,19 @@ final class ConfigTests: XCTestCase {
         XCTAssertEqual(c.usageHalfLifeDays, 3.5)
         XCTAssertEqual(p.count, 4)                     // screen, animation_ms, unknown source, empty terminal
     }
+
+    /// The defaults written as config.reference.toml (and on first run as config.toml) must be
+    /// the shipped example, parse without problems, and mean exactly the built-in defaults.
+    func testDefaultConfigTextMatchesEverything() throws {
+        let root = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
+        XCTAssertEqual(try String(contentsOf: root.appendingPathComponent("extras/config.toml"), encoding: .utf8), DefaultConfig.text)
+        var p: [String] = []
+        let c = Config.parse(DefaultConfig.text, problems: &p)
+        XCTAssertEqual(p, [])
+        XCTAssertEqual(c, Config())
+        for section in ["prefixes", "aliases", "currency", "clipboard", "panel", "search", "files", "apps", "learning"] {
+            XCTAssertTrue(DefaultConfig.text.contains("[\(section)]"), section)
+        }
+        XCTAssertEqual(Config.parse("terminal = \"x {}\"", problems: &p).terminal, "x {}")
+    }
 }

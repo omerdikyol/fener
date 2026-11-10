@@ -10,7 +10,7 @@ if args.count > 1, IPC.commands.contains(args[1]) {
     exit(IPC.send(Array(args.dropFirst())))  // client: never touches NSApplication
 }
 
-if IPC.isRunning() {
+if !args.contains("--bench"), IPC.isRunning() {
     print("fener is already running")
     exit(0)
 }
@@ -34,6 +34,15 @@ if args.contains("--bench") {
         print(String(format: "search %-9@ %4d results, %.2f ms each, top: %@", "\"\(q)\"" as NSString, r.count,
                      (CACurrentMediaTime() - t) * 10, r.prefix(3).map(\.title).joined(separator: ", ") as NSString))
     }
+    var t = CACurrentMediaTime()
+    let n = Emoji.all.count
+    print(String(format: "emoji index: %d entries in %.1f ms", n, (CACurrentMediaTime() - t) * 1000))
+    t = CACurrentMediaTime()
+    for _ in 0..<20 { _ = Emoji.search("heart") }
+    print(String(format: "emoji search \"heart\": %.2f ms each", (CACurrentMediaTime() - t) * 50))
+    t = CACurrentMediaTime()
+    for _ in 0..<1000 { _ = Calc.answer("10 km to mi"); _ = Calc.answer("2 * (3 + 4)^2") }
+    print(String(format: "calc: %.3f ms per answer", (CACurrentMediaTime() - t) / 2))
     exit(0)
 }
 
@@ -105,19 +114,116 @@ func merge(_ lists: [Item]...) -> [Item] {
     }.map(\.element)
 }
 
+let clipboard = Clipboard(dir: cacheDir.appendingPathComponent("clipboard"))
+let files = FileSearch()
+DispatchQueue.global(qos: .utility).async { _ = Emoji.all.count }  // build the emoji index early
+
+func sf(_ name: String) -> NSImage? { Icons.named(name, theme: theme) }
+
+func calcItem(_ a: Calc.Answer) -> Item {
+    Item(id: "calc", title: a.value, subtitle: a.detail + "  ·  ⏎ copies", icon: sf("equal.circle"),
+         run: { Clipboard.copyText(a.value) }, score: 10_000)
+}
+
+func confirm(_ a: SystemAction) -> Mode {
+    Mode(prompt: "\(a.name)?") { _ in [
+        Item(id: "confirm:yes", title: "Yes, \(a.name.lowercased())", icon: sf(a.icon), run: a.run),
+        Item(id: "confirm:no", title: "Cancel", icon: sf("xmark")),
+    ] }
+}
+
+func systemItems(_ q: String) -> [Item] {
+    SystemAction.all.compactMap { a in
+        guard let s = q.isEmpty ? 0 : Fuzzy.score(q, a.name) else { return nil }
+        var item = Item(id: "system:" + a.name, title: a.name, subtitle: a.subtitle, icon: sf(a.icon), score: s)
+        if a.confirm { item.submenu = { confirm(a) }; item.accessory = "›" } else { item.run = a.run }
+        return item
+    }
+}
+
+let ago = { () -> RelativeDateTimeFormatter in let f = RelativeDateTimeFormatter(); f.unitsStyle = .abbreviated; return f }()
+
+func clipboardItems(_ q: String) -> [Item] {
+    var out: [Item] = []
+    for c in clipboard.clips {
+        let when = ago.localizedString(for: c.date, relativeTo: Date())
+        var title: String, sub: String, icon: NSImage?
+        switch c.kind {
+        case .text:
+            title = String(c.text.split(whereSeparator: \.isNewline).first.map { $0.trimmingCharacters(in: .whitespaces) } ?? "").prefix(200).description
+            let lines = c.text.split(whereSeparator: \.isNewline).count
+            sub = (lines > 1 ? "\(lines) lines · " : "") + when
+            icon = sf("doc.text")
+        case .files:
+            let paths = c.text.split(separator: "\n")
+            title = paths.map { ($0 as NSString).lastPathComponent }.joined(separator: ", ")
+            sub = (paths.count > 1 ? "\(paths.count) files · " : "file · ") + when
+            icon = paths.first.map { NSWorkspace.shared.icon(forFile: String($0)) }
+        case .image:
+            title = "Image \(c.width)×\(c.height)"
+            sub = when
+            icon = clipboard.imageURL(c).flatMap { Icons.named($0.path, theme: theme) }
+        }
+        var score = 0
+        if !q.isEmpty {
+            guard let s = Fuzzy.score(q, c.kind == .image ? title : String(c.text.prefix(300))) else { continue }
+            score = s
+        }
+        out.append(Item(id: "clip:" + c.id, title: title, subtitle: sub, icon: icon, run: { clipboard.copy(c) }, score: score))
+    }
+    if q.isEmpty {
+        if !clipboard.clips.isEmpty {
+            let clear = SystemAction(name: "Clear Clipboard History", subtitle: "", icon: "trash", confirm: true) { clipboard.clear() }
+            out.append(Item(id: "clip:clear", title: clear.name, icon: sf("trash"), submenu: { confirm(clear) }))
+        }
+        return out
+    }
+    return out.sorted { $0.score > $1.score }
+}
+
+func emojiItems(_ q: String) -> [Item] {
+    Emoji.search(q).map { e in
+        Item(id: "emoji:" + e.code, title: e.name, subtitle: e.code, icon: Icons.named(e.char, theme: theme),
+             run: { Clipboard.copyText(e.char) })
+    }
+}
+
+/// Built-in modes for `fener show <name>`; a user menu with the same name wins.
+let builtins: [String: Mode] = [
+    "clipboard": Mode(prompt: "Clipboard…", search: clipboardItems),
+    "system": Mode(prompt: "System…", search: systemItems),
+    "emoji": Mode(prompt: "Emoji…", search: emojiItems),
+    "files": Mode(prompt: "Files…", search: files.search),
+    "windows": Mode(prompt: "Windows…") { windows.search($0, all: true) },
+    "calc": Mode(prompt: "Calculate…") { q in Calc.answer(q, forced: true).map { [calcItem($0)] } ?? [] },
+]
+
 // ponytail: prefixes are fixed here; stage 6 reads them from config.toml.
+let prefixes: [(String, (String) -> [Item])] = [
+    ("=", { q in Calc.answer(q, forced: true).map { [calcItem($0)] } ?? [] }),
+    ("/", files.search),
+    (":", emojiItems),
+    ("*", clipboardItems),
+    (">", { searchMenus($0, entries: true) }),
+    (";", { windows.search($0, all: true) }),
+]
+
 let root = Mode(prompt: "Apps…") { raw in
-    if raw.hasPrefix(">") { return searchMenus(String(raw.dropFirst()).trimmingCharacters(in: .whitespaces), entries: true) }
-    if raw.hasPrefix(";") { return windows.search(String(raw.dropFirst()).trimmingCharacters(in: .whitespaces), all: true) }
+    for (p, search) in prefixes where raw.hasPrefix(p) {
+        return search(String(raw.dropFirst(p.count)).trimmingCharacters(in: .whitespaces))
+    }
     if raw.isEmpty { return apps.search("") }
     // Windows rank a bit below apps and menus: long titles match short queries by accident.
-    return merge(apps.search(raw), searchMenus(raw, entries: true),
-                 windows.search(raw, all: false).map { var i = $0; i.score -= 10; return i })
+    let merged = merge(apps.search(raw), searchMenus(raw, entries: true), systemItems(raw),
+                       windows.search(raw, all: false).map { var i = $0; i.score -= 10; return i })
+    return (Calc.answer(raw).map { [calcItem($0)] } ?? []) + merged
 }
 
 let launcher = Launcher(theme: theme, root: root)
 launcher.onShow = { apps.refresh(); windows.refresh(); menus.load() }
 windows.onChange = { launcher.refilter() }
+files.onChange = { launcher.refilter() }
+clipboard.start()
 windows.refresh()
 launcher.prewarm()
 
@@ -147,8 +253,10 @@ let server = IPC.Server(path: IPC.socketPath) { words in
     case "show":
         if words.count > 1 {
             menus.load()
-            guard let m = menus.menus[words[1]] else { return "error: no menu named \(words[1]) in \(menus.dir.path)" }
-            launcher.show(menuMode(m))
+            if let m = menus.menus[words[1]] { launcher.show(menuMode(m)) }
+            else if let b = builtins[words[1]] { launcher.show(b) }
+            else { return "error: no menu named \(words[1]) in \(menus.dir.path) (built in: \(builtins.keys.sorted().joined(separator: ", ")))" }
+            if words.count > 2 { launcher.setQuery(words.dropFirst(2).joined(separator: " ")) }
         } else { launcher.show() }
     case "hide": launcher.hide()
     case "reload":

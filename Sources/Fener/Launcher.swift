@@ -264,7 +264,11 @@ final class Launcher: NSObject, NSWindowDelegate, NSTableViewDataSource, NSTable
 
     func controlTextDidChange(_ obj: Notification) { filter() }
 
-    func setQuery(_ q: String) { field.stringValue = q; filter() }
+    func setQuery(_ q: String) {
+        field.stringValue = q
+        field.currentEditor()?.selectedRange = NSRange(location: (q as NSString).length, length: 0)  // caret at end, not select-all
+        filter()
+    }
 
     func push(_ m: Mode) {
         stack.append(m)

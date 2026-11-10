@@ -10,7 +10,11 @@ enum Fuzzy {
     /// so indexes into the folded and original strings stay aligned.
     static func fold(_ s: String) -> [Character] {
         s.map { c in
-            if c == "ı" || c == "I" || c == "İ" { return "i" }
+            if let a = c.asciiValue {  // fast path: most text is ASCII
+                if a == 0x49 { return "i" }
+                return a >= 0x41 && a <= 0x5A ? Character(Unicode.Scalar(a + 32)) : c
+            }
+            if c == "ı" || c == "İ" { return "i" }
             return String(c).folding(options: [.caseInsensitive, .diacriticInsensitive], locale: nil).first ?? c
         }
     }

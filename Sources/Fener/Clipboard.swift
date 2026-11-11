@@ -38,6 +38,9 @@ final class Clipboard {
     private var timer: Timer?
     private var thumbs: [String: NSImage] = [:]
     private let io = DispatchQueue(label: "fener.clipboard", qos: .utility)
+    private let loadKey: () -> SymmetricKey?
+    private let legacy: URL?
+    private var unlockStarted = false
 
     /// `legacy`: the old plaintext folder (~/Library/Caches/fener/clipboard), migrated and removed.
     init(dir: URL, legacy: URL? = nil, maxItems: Int = 200, maxItemBytes: Int = 5_000_000,
@@ -45,12 +48,22 @@ final class Clipboard {
         self.dir = dir
         self.maxItems = maxItems
         self.maxItemBytes = maxItemBytes
+        self.loadKey = loadKey
+        self.legacy = legacy
         let fm = FileManager.default
         try? fm.createDirectory(at: images, withIntermediateDirectories: true, attributes: [.posixPermissions: 0o700])
         try? fm.setAttributes([.posixPermissions: 0o700], ofItemAtPath: dir.path)
         var values = URLResourceValues(); values.isExcludedFromBackup = true
         var d = dir; try? d.setResourceValues(values)
-        // The Keychain may ask for permission; never block the launcher on that.
+    }
+
+    /// Reads the key and the saved history, once. Called by start(), so with clipboard history
+    /// turned off fener never touches the Keychain. The Keychain may ask for permission; never
+    /// block the launcher on that.
+    func unlock() {
+        guard !unlockStarted else { return }
+        unlockStarted = true
+        let loadKey = loadKey, legacy = legacy
         io.async {
             let k = loadKey()
             DispatchQueue.main.async { self.unlocked(k, legacy: legacy) }
@@ -96,6 +109,7 @@ final class Clipboard {
 
     func start() {
         guard timer == nil else { return }
+        unlock()
         lastChange = NSPasteboard.general.changeCount  // never record what was copied while off
         let t = Timer(timeInterval: 0.5, repeats: true) { [weak self] _ in self?.poll() }
         t.tolerance = 0.1

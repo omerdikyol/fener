@@ -59,7 +59,7 @@ struct PanelBehavior {
 struct Mode {
     var prompt: String
     var width: CGFloat? = nil   // overrides the theme width while this mode is open
-    var dynamicWidth: (() -> CGFloat?)? = nil  // asked each time, for widths that follow config
+    var dynamicWidth: ((String) -> CGFloat?)? = nil  // asked with the typed text each time, for widths that follow config
     var key = ""               // identifies one opened instance, e.g. for a refreshing menu
     var query = ""             // typed into the field when this mode opens
     var search: (String) -> [Item]
@@ -89,7 +89,7 @@ final class Launcher: NSObject, NSWindowDelegate, NSTableViewDataSource, NSTable
     private var topY: CGFloat = 0
     private var centerX: CGFloat = 0
     private var mode: Mode { stack[stack.count - 1] }
-    private var modeWidth: CGFloat { mode.dynamicWidth?() ?? mode.width ?? theme.width }
+    private var modeWidth: CGFloat { mode.dynamicWidth?(field.stringValue) ?? mode.width ?? theme.width }
     /// The open menu, if one is open above the root (kept across a theme rebuild).
     var openMenu: Mode? { stack.count > 1 ? stack.last : nil }
     var onShow: () -> Void = {}

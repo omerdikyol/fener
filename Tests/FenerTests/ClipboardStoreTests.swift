@@ -35,6 +35,7 @@ final class ClipboardStoreTests: XCTestCase {
         ], png: png)
         let dir = root.appendingPathComponent("new")
         let c = Clipboard(dir: dir, legacy: old, loadKey: { key })
+        c.unlock()
         let store = dir.appendingPathComponent("history.enc")
         waitFor(FileManager.default.fileExists(atPath: store.path) && c.clips.count == 2)
 
@@ -49,9 +50,11 @@ final class ClipboardStoreTests: XCTestCase {
 
         // A second instance with the same key reads it back; a different key cannot.
         let again = Clipboard(dir: dir, loadKey: { key })
+        again.unlock()
         waitFor(again.clips.count == 2)
         XCTAssertEqual(again.clips.first?.text, "secret-ish text")
         let wrong = Clipboard(dir: dir, loadKey: { SymmetricKey(size: .bits256) })
+        wrong.unlock()
         RunLoop.main.run(until: Date().addingTimeInterval(0.3))
         XCTAssertTrue(wrong.clips.isEmpty)
     }
@@ -63,6 +66,7 @@ final class ClipboardStoreTests: XCTestCase {
             .init(id: "old", kind: .text, text: "y", hash: "2", date: Date().addingTimeInterval(-40 * 86_400)),
         ])
         let c = Clipboard(dir: root.appendingPathComponent("s"), legacy: old, loadKey: { key })
+        c.unlock()
         waitFor(c.clips.count == 1)                       // the 40-day-old item is gone (default 30)
         XCTAssertEqual(c.clips.map(\.id), ["new"])
         c.keepDays = 1
@@ -79,7 +83,7 @@ final class ClipboardStoreTests: XCTestCase {
     func testNoKeyMeansNothingIsWritten() throws {
         let old = try legacyFolder(with: [.init(id: "a", kind: .text, text: "x", hash: "1", date: Date())])
         let dir = root.appendingPathComponent("nokey")
-        _ = Clipboard(dir: dir, legacy: old, loadKey: { nil })
+        Clipboard(dir: dir, legacy: old, loadKey: { nil }).unlock()
         RunLoop.main.run(until: Date().addingTimeInterval(0.4))
         XCTAssertFalse(FileManager.default.fileExists(atPath: dir.appendingPathComponent("history.enc").path))
         XCTAssertTrue(FileManager.default.fileExists(atPath: old.path))   // legacy left alone without a key

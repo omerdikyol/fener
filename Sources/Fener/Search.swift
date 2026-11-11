@@ -107,7 +107,8 @@ var homeMenu: Menu? {
     return m
 }
 
-let root = Mode(prompt: "Search…", dynamicWidth: { homeMenu?.width }) { raw in
+// The home menu's width applies only while it is listed; results use the theme width.
+let root = Mode(prompt: "Search…", dynamicWidth: { $0.isEmpty ? homeMenu?.width : nil }) { raw in
     for (p, search) in prefixes where raw.hasPrefix(p) {
         return search(String(raw.dropFirst(p.count)).trimmingCharacters(in: .whitespaces))
     }

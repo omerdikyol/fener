@@ -137,6 +137,7 @@ func handleCommand(_ words: [String]) -> String {
             menus.load()
             if let m = menus.menus[words[1]] { launcher.show(menuMode(m)) }
             else if let b = builtinMode(words[1]) { launcher.show(b) }
+            else if words[1] == "search" { launcher.show() }   // the main search, e.g. `fener show search 100 usd to try`
             else { return "error: no menu named \(words[1]) in \(menus.dir.path) (built in: \(builtins.keys.sorted().joined(separator: ", ")))" }
             if words.count > 2 { launcher.setQuery(words.dropFirst(2).joined(separator: " ")) }
         } else { launcher.show() }

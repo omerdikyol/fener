@@ -221,3 +221,11 @@ Some example menus call tools you may not have (`omniwmctl` for OmniWM, `sketchy
 say so in the menu instead of failing. Without a `menus/menu.toml`, the empty search lists
 your apps.
 
+### Releasing
+
+`scripts/publish.sh 0.2.0` sets `VERSION`, builds the notarized app, creates the GitHub
+release with the zip and its SHA-256, and updates the cask in
+[omerdikyol/homebrew-tap](https://github.com/omerdikyol/homebrew-tap). It checks everything
+first and asks before publishing. `--dry-run` shows the steps; `--notes notes.md` uses your
+release notes instead of GitHub's generated ones. It needs a Developer ID certificate and
+notary credentials stored with `xcrun notarytool store-credentials fener-notary`.

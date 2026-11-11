@@ -72,6 +72,7 @@ run cp .build/dist/fener.rb "$TAP_DIR/Casks/fener.rb"
 run git -C "$TAP_DIR" commit -qm "fener $version" Casks/fener.rb
 run git -C "$TAP_DIR" push -q origin main
 
+[ $dry = 1 ] && { echo "dry run: nothing was changed"; exit 0; }
 echo "published fener $version"
 echo "  release: https://github.com/$REPO/releases/tag/v$version"
 echo "  brew:    brew upgrade --cask omerdikyol/tap/fener"

@@ -261,8 +261,9 @@ input.addEventListener("keydown", (e) => {
 });
 
 // "Try typing" buttons type into the panel, a character at a time.
-let typing = 0;
+let typing = 0, demoOn = false;
 document.querySelectorAll(".try button").forEach((b) => b.addEventListener("click", () => {
+  demoOn = false;
   const text = b.dataset.q, id = ++typing;
   stack = [stack[0]]; input.placeholder = "Search…"; input.value = ""; filter(); input.focus();
   const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -285,6 +286,25 @@ document.querySelectorAll("[data-copy]").forEach((b) => b.addEventListener("clic
   catch { b.textContent = "select it"; }
   setTimeout(() => (b.textContent = "copy"), 1600);
 }));
+
+// Shows a few queries on its own after the lantern lights, until the visitor touches the panel.
+window.fenerDemo = () => {
+  if (input.value || document.activeElement === input) return;
+  demoOn = true;
+  const queries = ["100 usd to try", "time in tokyo", ":heart", "2 * (3 + 4)^2", "lock", ""];
+  let qi = 0;
+  const step = () => {
+    if (!demoOn) return;
+    const text = queries[qi++ % queries.length], id = ++typing;
+    input.value = ""; filter();
+    [...text].forEach((ch, i) => setTimeout(() => { if (demoOn && id === typing) { input.value += ch; filter(); } }, 70 * i + 120));
+    setTimeout(step, 70 * text.length + (text ? 2300 : 1600));
+  };
+  step();
+};
+const stopDemo = () => { if (demoOn) { demoOn = false; typing++; input.value = ""; filter(); } };
+panel.addEventListener("pointerdown", stopDemo);
+input.addEventListener("focus", stopDemo);
 
 // fener.../?q=100+usd+to+try (or #q=…) opens the page with that typed.
 const fromUrl = new URLSearchParams(location.search).get("q") || decodeURIComponent((location.hash.match(/^#q=(.*)$/) || [])[1] || "");

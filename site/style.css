@@ -24,6 +24,10 @@ kbd { font: inherit; font-size: 0.85em; color: var(--ink); border: 1px solid var
 h1, h2 { color: var(--ink); font-weight: 700; letter-spacing: -0.02em; margin: 0; }
 h1 { font-size: clamp(34px, 5.2vw, 60px); line-height: 1.08; }
 h2 { font-size: clamp(24px, 3vw, 32px); line-height: 1.2; }
+.js main > section:not(.hero) h2 { color: #353a54; transition: color 1.4s ease; }
+.js main > section:not(.hero) h2.lit { color: var(--ink); }
+.js .manual dt { color: #5a4033; transition: color 0.9s ease; }
+.js .manual dl.lit dt { color: var(--flame); }
 .sub { color: var(--mute); margin: 8px 0 0; }
 main > section { max-width: 1180px; margin: 0 auto; padding: clamp(56px, 9vw, 120px) var(--gap) 0; }
 
@@ -47,16 +51,44 @@ main > section { max-width: 1180px; margin: 0 auto; padding: clamp(56px, 9vw, 12
 .try button { font: inherit; font-size: 13px; color: var(--ink); background: none; border: 1px solid var(--line); padding: 4px 10px; cursor: pointer; }
 .try button:hover, .try button:focus-visible { border-color: var(--flame); color: var(--flame); outline: none; }
 
-.hero-demo { position: relative; }
-/* The lantern: one warm light behind the panel, nothing else on the page glows. unslop-ignore: the product's concept, used once. */
-.light { position: absolute; inset: -18% -22% -10% -22%; background: radial-gradient(closest-side, rgba(255, 158, 100, 0.13), rgba(255, 158, 100, 0) 70%); pointer-events: none; }
+/* ---- the lantern ------------------------------------------------------------------------
+   Every light effect on the page comes from the hanging lantern (or, faintly, the cursor).
+   light.js swings it, flickers the flame and writes the light's position into CSS variables:
+   --glow (0..1 brightness), --gx/--gy (light in .light), --ex/--ey (light on the panel),
+   --sx/--sy (panel shadow), --lx/--ly/--lr and --cx/--cy (the wall's two light spots).
+   unslop-ignore: the warm light is the product's concept. */
+.hero-demo { --glow: 0; }
+.wall { --lx: -999px; --ly: -999px; --lr: 0px; --cx: -999px; --cy: -999px; }
+.wall { position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background-image: radial-gradient(circle at 1px 1px, #2f3552 1.1px, transparent 1.6px); background-size: 22px 22px;
+  -webkit-mask-image: radial-gradient(circle 190px at var(--cx) var(--cy), rgba(0,0,0,0.55), transparent 100%), radial-gradient(circle var(--lr) at var(--lx) var(--ly), #000, transparent 100%);
+  mask-image: radial-gradient(circle 190px at var(--cx) var(--cy), rgba(0,0,0,0.55), transparent 100%), radial-gradient(circle var(--lr) at var(--lx) var(--ly), #000, transparent 100%); }
+.top, main, footer { position: relative; z-index: 1; }
+
+.hero-demo { position: relative; padding-top: 196px; }
+.light { position: absolute; inset: -40% -45% -30% -45%; pointer-events: none;
+  background: radial-gradient(circle calc(140px + 330px * var(--glow)) at var(--gx, 50%) var(--gy, 20%),
+    rgba(255, 176, 112, calc(0.3 * var(--glow))), rgba(255, 158, 100, calc(0.09 * var(--glow))) 55%, rgba(255, 158, 100, 0) 100%); }
+.embers { position: absolute; left: -220px; top: -160px; width: calc(100% + 440px); height: calc(100% + 260px); pointer-events: none; }
+.lantern { position: absolute; left: calc(50% - 38px); top: -40px; width: 76px; transform-origin: 38px 0; will-change: transform; z-index: 2; }
+.lantern .cord { width: 2px; height: 96px; margin: 0 auto; background: linear-gradient(to bottom, rgba(115, 122, 162, 0), #565f89 45%, #737aa2); }
+.lantern svg { display: block; margin-top: -4px; filter: drop-shadow(0 0 calc(18px * var(--glow)) rgba(255, 158, 100, calc(0.55 * var(--glow)))); }
+.lantern .glass { opacity: calc(0.35 + 0.65 * var(--glow)); }
+.lantern .flame { transform-box: fill-box; transform-origin: 50% 100%; opacity: calc(0.2 + 0.8 * var(--glow)); }
+
 .status { position: relative; color: var(--mute); font-size: 12.5px; margin: 14px 2px 0; min-height: 3.4em; }
 .status b { color: var(--flame); font-weight: 400; }
 
 /* the fener panel, sized like the app: 40 px rows, 15 px text, 2 px border, square corners */
 .panel { --bg: #1a1b26; --border: #c0caf5; --text: #c0caf5; --muted: #565f89; --accent: #7aa2f7; --selection: #24283b;
   position: relative; background: color-mix(in srgb, var(--bg) 95%, transparent); border: 2px solid var(--border);
-  padding: 18px; box-shadow: 0 30px 80px rgba(0, 0, 0, 0.55); transition: background 0.2s, border-color 0.2s; }
+  padding: 18px; box-shadow: var(--sx, 0px) var(--sy, 30px) 80px rgba(0, 0, 0, 0.6); transition: background 0.2s, border-color 0.2s; }
+/* Light catching the frame on the lantern's side. */
+.panel::before { content: ""; position: absolute; inset: -2px; padding: 2px; pointer-events: none;
+  background: radial-gradient(circle 260px at var(--ex, 50%) var(--ey, -40px), rgba(255, 196, 140, var(--glow)), rgba(255, 158, 100, 0) 100%);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0); }
+.files-demo .panel::before { display: none; }
 .panel[data-theme="catppuccin-mocha"] { --bg: #1e1e2e; --border: #b4befe; --text: #cdd6f4; --muted: #6c7086; --accent: #89b4fa; --selection: #313244; }
 .panel input, .panel .field { display: block; width: 100%; height: 24px; margin: 0 0 10px 2px; padding: 0; border: 0; outline: 0; background: none; color: var(--text); font: inherit; font-size: 15px; caret-color: var(--accent); }
 .panel input::placeholder, .panel .placeholder { color: var(--muted); }
@@ -135,4 +167,9 @@ footer b { color: var(--ink); }
   .panel { padding: 14px 12px; }
   .panel li { gap: 10px; padding: 0 8px; }
 }
-@media (prefers-reduced-motion: reduce) { .panel { transition: none; } }
+@media (prefers-reduced-motion: reduce) {
+  .panel { transition: none; }
+  .js main > section:not(.hero) h2, .js .manual dt { transition: none; }
+}
+@media (max-width: 960px) { .hero-demo { padding-top: 170px; } }
+@media (hover: none) { .wall { -webkit-mask-image: radial-gradient(circle var(--lr) at var(--lx) var(--ly), #000, transparent 100%); mask-image: radial-gradient(circle var(--lr) at var(--lx) var(--ly), #000, transparent 100%); } }

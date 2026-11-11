@@ -194,4 +194,4 @@ Choose System › Quit fener, remove it from Login Items and delete the app. If 
 
 ## License
 
-MIT, see [LICENSE](LICENSE). fener is written from scratch; it takes ideas from [Omarchy](https://omarchy.org) and Walker but no code. Third-party data (Nerd Font glyph names, the Tokyo Night and Catppuccin palettes) is listed in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
+MIT, see [LICENSE](LICENSE). fener is written from scratch: it takes ideas from [Omarchy](https://omarchy.org) and [Walker](https://github.com/abenz1267/walker), but no code. Bundled third-party material is credited in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md): Nerd Font glyph names, the Tokyo Night and Catppuccin palettes, and the website's fonts (JetBrains Mono and Hanken Grotesk, SIL Open Font License).

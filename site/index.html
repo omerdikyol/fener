@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>fener: a keyboard launcher for macOS you configure in text</title>
+  <meta name="description" content="fener opens with one shortcut and finds apps, files, clipboard history and emoji, answers sums, conversions and time zones, and runs your own menus. Native, private, MIT licensed.">
+  <meta property="og:title" content="fener: a keyboard launcher for macOS">
+  <meta property="og:description" content="Apps, files, clipboard, emoji, answers and your own menus behind one shortcut. Configured in plain text. No account, no tracking.">
+  <meta property="og:image" content="https://omerdikyol.github.io/fener/og.png">
+  <meta property="og:url" content="https://omerdikyol.github.io/fener/">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="color-scheme" content="dark">
+  <link rel="icon" href="icon-256.png">
+  <link rel="preload" href="fonts/jbm-regular.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="top">
+    <a class="brand" href="#"><img src="icon-256.png" alt="" width="28" height="28"><span>fener</span></a>
+    <nav>
+      <a href="#type">What you can type</a>
+      <a href="#files">Configuration</a>
+      <a href="#privacy">Privacy</a>
+      <a href="https://github.com/omerdikyol/fener">GitHub</a>
+    </nav>
+  </header>
+
+  <main>
+    <section class="hero">
+      <div class="hero-text">
+        <h1>A launcher you configure in&nbsp;text.</h1>
+        <p class="lede">fener opens with one shortcut and finds your apps, files, clipboard history and emoji.
+          It answers sums, conversions and time zones while you type, and turns any shell command
+          into a menu entry. Everything it does is set in plain files under <code>~/.config/fener</code>.</p>
+        <div class="cta">
+          <a class="button" href="https://github.com/omerdikyol/fener/releases/latest">Download for macOS</a>
+          <a class="quiet" href="#install">or build from source</a>
+        </div>
+        <p class="facts">macOS 14 or later · Apple Silicon and Intel · MIT license</p>
+        <div class="try">
+          <span>Try typing</span>
+          <button data-q="100 usd to try">100 usd to try</button>
+          <button data-q="15:00 istanbul to london">15:00 istanbul to london</button>
+          <button data-q=":heart">:heart</button>
+          <button data-q="2 * (3 + 4)^2">2 * (3 + 4)^2</button>
+          <button data-q="lock">lock</button>
+        </div>
+      </div>
+
+      <div class="hero-demo">
+        <div class="light" aria-hidden="true"></div>
+        <div class="panel" id="panel" data-theme="tokyo-night">
+          <input id="q" type="text" placeholder="Search…" autocomplete="off" spellcheck="false" aria-label="Search, as in fener" aria-controls="rows">
+          <ul id="rows" role="listbox"></ul>
+        </div>
+        <p class="status" id="status" aria-live="polite">A copy of fener's panel, running in this page. <kbd>↑</kbd> <kbd>↓</kbd> move, <kbd>Return</kbd> runs, <kbd>Esc</kbd> clears.</p>
+      </div>
+    </section>
+
+    <section id="type" class="manual">
+      <h2>What you can type</h2>
+      <p class="sub">One field. fener reads what you type and shows the right thing first.</p>
+      <dl>
+        <div><dt>saf</dt><dd>Apps, ranked by what you open and what you picked for these letters before.</dd></div>
+        <div><dt>/ invoice</dt><dd>Files, through Spotlight. Recent files and screenshots have their own views.</dd></div>
+        <div><dt>*</dt><dd>Clipboard history: text, files and images, encrypted on disk.</dd></div>
+        <div><dt>:tada</dt><dd>Emoji and symbols, from the names that ship with macOS.</dd></div>
+        <div><dt>100 usd to try</dt><dd>Currency, with the European Central Bank's daily rates.</dd></div>
+        <div><dt>time in tokyo</dt><dd>Time zones, offline.</dd></div>
+        <div><dt>days until dec 31</dt><dd>Date math: <code>today + 30 days</code>, <code>2026-12-24 + 1 month</code>.</dd></div>
+        <div><dt>10 km to mi</dt><dd>Units: length, weight, temperature, data, time, speed.</dd></div>
+        <div><dt>!daily</dt><dd>Snippets with <code>{date}</code>, <code>{clipboard}</code> and other placeholders.</dd></div>
+        <div><dt>gh swift toml</dt><dd>Web searches by keyword, in your own browser.</dd></div>
+        <div><dt>lock</dt><dd>System actions, System Settings panes, audio devices, a color picker.</dd></div>
+        <div><dt>⌘K</dt><dd>More actions for the selected row: reveal in Finder, copy the path, quit an app.</dd></div>
+      </dl>
+    </section>
+
+    <section id="files" class="files">
+      <div class="files-text">
+        <h2>Your settings are a&nbsp;file</h2>
+        <p>Change a line, save, and fener applies it. No restart. Every option sits in
+          <code>config.toml</code>, with its default and a comment in
+          <code>config.reference.toml</code> next to it. If you would rather click, the same
+          settings are in the panel, and fener writes them back to the file with your comments kept.</p>
+        <p>Menus are files too. A list of commands in TOML, or a script that prints lines and runs
+          again with the one you pick. Keep the folder in your dotfiles.</p>
+        <p class="hint">Click the theme name in the file.</p>
+      </div>
+      <div class="files-work">
+      <div class="editor" aria-label="Example configuration files">
+        <div class="tab"><span>~/.config/fener/config.toml</span></div>
+        <pre><span class="c"># every key is optional</span>
+<span class="k">theme</span> = <button class="v" id="theme-toggle" aria-label="Switch theme">"tokyo-night"</button>
+<span class="k">shortcut</span> = <span class="s">"cmd+space"</span>
+
+<span class="h">[panel]</span>
+<span class="k">position</span> = <span class="s">"center"</span>
+<span class="k">close_on_blur</span> = <span class="b">true</span></pre>
+        <div class="tab"><span>~/.config/fener/menus/capture.toml</span></div>
+        <pre><span class="h">[[entry]]</span>
+<span class="k">name</span> = <span class="s">"Region to Clipboard"</span>
+<span class="k">icon</span> = <span class="s">"nf-md-selection_drag"</span>
+<span class="k">command</span> = <span class="s">"screencapture -i -c"</span>
+
+<span class="h">[[entry]]</span>
+<span class="k">name</span> = <span class="s">"Record or More…"</span>
+<span class="k">subtitle</span> = <span class="s">"Screenshot app"</span>
+<span class="k">command</span> = <span class="s">"open -a Screenshot"</span></pre>
+      </div>
+      <div class="files-demo">
+        <div class="panel small" id="mini" data-theme="tokyo-night">
+          <div class="field placeholder">Capture…</div>
+          <ul>
+            <li class="sel"><i data-icon="md-selection_drag"></i><b>Region to Clipboard</b></li>
+            <li><i data-icon="md-selection"></i><b>Region to Desktop</b></li>
+            <li><i data-icon="md-window_maximize"></i><b>Window to Desktop</b></li>
+            <li><i data-icon="md-monitor"></i><b>Screen to Desktop</b></li>
+            <li><i data-icon="md-record_rec"></i><b>Record or More…</b><span>Screenshot app</span></li>
+          </ul>
+        </div>
+      </div>
+      </div>
+    </section>
+
+    <section id="privacy" class="ledger">
+      <h2>What leaves your Mac</h2>
+      <table>
+        <tr><th>network</th><td>One request: the European Central Bank's public exchange-rate file, at most once a day, only when you convert a currency. Turn it off with <code>[currency] enabled = false</code>.</td></tr>
+        <tr><th>telemetry</th><td>None. No analytics, no crash reports, no update checks.</td></tr>
+        <tr><th>account</th><td>None.</td></tr>
+        <tr><th>clipboard</th><td>Stays on your Mac, encrypted with AES-GCM under a key in your Keychain. Password managers' copies are skipped.</td></tr>
+        <tr><th>permissions</th><td>None up front. No Accessibility, Input Monitoring or Screen Recording.</td></tr>
+        <tr><th>this page</th><td>No trackers, and no fonts or scripts from anywhere else.</td></tr>
+      </table>
+    </section>
+
+    <section class="compare">
+      <h2>Next to the others</h2>
+      <p class="sub">They are all good launchers. This is where fener stands.</p>
+      <div class="scroll">
+        <table>
+          <thead><tr><th></th><th>fener</th><th>Spotlight</th><th>Raycast</th><th>Alfred</th></tr></thead>
+          <tbody>
+            <tr><th>Price</th><td>free</td><td>built in</td><td>free; Pro plan</td><td>free; paid Powerpack</td></tr>
+            <tr><th>Source</th><td>open, MIT</td><td>closed</td><td>closed</td><td>closed</td></tr>
+            <tr><th>Configured in</th><td>text files and the panel</td><td>System Settings</td><td>the app</td><td>the app</td></tr>
+            <tr><th>Extend with</th><td>shell commands and scripts</td><td>Shortcuts</td><td>TypeScript extensions</td><td>workflows</td></tr>
+            <tr><th>Clipboard history</th><td>yes, encrypted</td><td>yes</td><td>yes</td><td>Powerpack</td></tr>
+            <tr><th>Network</th><td>exchange rates only</td><td>Apple services</td><td>yes</td><td>update checks</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="note">Pick Raycast or Alfred for a big catalog of ready-made extensions, or snippets that type themselves. Pick fener to own every line of your setup.</p>
+    </section>
+
+    <section id="install" class="install">
+      <h2>Install</h2>
+      <ol>
+        <li><span>Download <a href="https://github.com/omerdikyol/fener/releases/latest">the latest release</a>, unzip it and move <code>fener.app</code> to Applications.</span></li>
+        <li><span>Open it. The panel appears and fener adds itself to Login Items.</span></li>
+        <li><span>Press <kbd>⌘</kbd> <kbd>Space</kbd>, after turning off Spotlight's shortcut in System Settings › Keyboard › Keyboard Shortcuts. Or set another shortcut in fener Settings.</span></li>
+      </ol>
+      <p>Or build it yourself, with Xcode or the Command Line Tools:</p>
+      <div class="cmd"><pre>git clone https://github.com/omerdikyol/fener.git
+cd fener &amp;&amp; ./scripts/install.sh</pre><button class="copy" data-copy>copy</button></div>
+      <p class="facts">Icons use a Nerd Font: <code>brew install --cask font-jetbrains-mono-nerd-font</code></p>
+    </section>
+  </main>
+
+  <footer>
+    <img src="icon-256.png" alt="" width="40" height="40">
+    <p><b>fener</b> means lantern in Turkish.<br>
+      <a href="https://github.com/omerdikyol/fener">Source</a> ·
+      <a href="https://github.com/omerdikyol/fener/blob/main/docs/guide.md">Guide</a> ·
+      <a href="https://github.com/omerdikyol/fener/blob/main/LICENSE">MIT license</a></p>
+  </footer>
+
+  <script src="icons.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

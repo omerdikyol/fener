@@ -3,3 +3,4 @@
 !docs/images/*.png
 .DS_Store
 !assets/*.png
+!site/*.png

@@ -23,3 +23,13 @@ final class HotkeyTests: XCTestCase {
         }
     }
 }
+
+final class HotkeySystemTests: XCTestCase {
+    func testSpotlightClash() throws {
+        let cmdSpace = try XCTUnwrap(Hotkey.parse("cmd+space"))
+        XCTAssertEqual(Hotkey.systemOwner(cmdSpace, hotkeys: [:]), "Spotlight")   // factory setting
+        let off: [String: Any] = ["64": ["enabled": false, "value": ["parameters": [65535, 49, 1048576]]]]
+        XCTAssertNil(Hotkey.systemOwner(cmdSpace, hotkeys: off))
+        XCTAssertNil(Hotkey.systemOwner(try XCTUnwrap(Hotkey.parse("shift+cmd+space")), hotkeys: [:]))
+    }
+}

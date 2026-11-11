@@ -40,8 +40,13 @@ your apps.
 
 ### A key to open it
 
-Set a shortcut in fener Settings › Shortcut (`fener show preferences`) and press the keys you
-want, or write it in `config.toml`:
+The default shortcut is Cmd+Space. macOS gives Cmd+Space to Spotlight, so turn Spotlight's
+off first: System Settings › Keyboard › Keyboard Shortcuts › Spotlight › Show Spotlight
+search. Until then Spotlight keeps the key, and fener lists the clash at the top of its
+panel (open it with `~/.local/bin/fener toggle`).
+
+To use other keys, open fener Settings › Shortcut (`fener show preferences`) and press them,
+or write them in `config.toml`:
 
 ```toml
 shortcut = "shift+cmd+space"

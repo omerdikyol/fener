@@ -4,7 +4,7 @@ import AppKit
 ///
 ///     theme = "tokyo-night"          # themes/<name>.toml, or the built-in tokyo-night
 ///     home = "menu"                  # menu shown while the search is empty; "" = app list
-///     shortcut = "cmd+shift+space"   # fener's own show/hide shortcut; "" = none
+///     shortcut = "cmd+space"         # fener's own show/hide shortcut; "" = none
 ///     learn_queries = true           # rank rows you picked for the same text first; Recently Used
 ///     terminal_command = "open -na Ghostty --args --command={} --quit-after-last-window-closed=true"
 ///                                    # how `terminal = true` menu entries run; {} = the command
@@ -62,7 +62,7 @@ struct Config: Equatable {
     var theme = "tokyo-night"
     var learnQueries = true   // learn which row is picked for which typed text; Recently Used
     var home = "menu"   // menu listed while the search is empty; "" lists apps instead
-    var shortcut = ""   // fener's own show/hide shortcut, e.g. "ctrl+opt+cmd+space"; "" = none
+    var shortcut = "cmd+space"   // fener's own show/hide shortcut; "" = none
     var terminal = "open -na Ghostty --args --command={} --quit-after-last-window-closed=true"
     var prefixes: [String: String] = ["calc": "=", "files": "/", "emoji": ":", "clipboard": "*", "menus": ">", "windows": ";", "snippets": "!"]
     var clipboardEnabled = true

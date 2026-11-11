@@ -105,8 +105,37 @@ enum Hotkey {
     private static var handler: EventHandlerRef?
     private static var action: () -> Void = {}
     private static var registered: String?
-    /// Why the configured shortcut is not active, or nil.
-    private(set) static var error: String?
+    private static var registerError: String?
+    /// Why the configured shortcut is not active, or nil. A macOS shortcut on the same keys
+    /// (Spotlight's ⌘ Space) is checked each time, so turning it off clears the message.
+    static var error: String? {
+        if let registerError { return registerError }
+        guard let s = registered, let c = parse(s), let owner = systemOwner(c) else { return nil }
+        return "shortcut \(label(c)) is also macOS's \(owner) shortcut, which wins; turn that off in System Settings › Keyboard › Keyboard Shortcuts, or pick another"
+    }
+
+    /// macOS's own shortcuts that commonly clash, with their factory keys, used when the
+    /// user never changed them (com.apple.symbolichotkeys lists only changed ones).
+    private static let systemDefaults: [String: (name: String, key: Int, mods: NSEvent.ModifierFlags)] = [
+        "64": ("Spotlight", kVK_Space, [.command]), "65": ("Finder search", kVK_Space, [.command, .option]),
+        "60": ("input source", kVK_Space, [.control]), "61": ("next input source", kVK_Space, [.control, .option]),
+    ]
+
+    /// The enabled macOS shortcut on these keys, by name, or nil.
+    static func systemOwner(_ c: Combo, hotkeys: [String: Any]? = UserDefaults(suiteName: "com.apple.symbolichotkeys")?
+                                .dictionary(forKey: "AppleSymbolicHotKeys")) -> String? {
+        for (id, d) in systemDefaults {
+            var key = d.key, mods = d.mods, enabled = true
+            if let entry = hotkeys?[id] as? [String: Any] {
+                enabled = (entry["enabled"] as? Bool) ?? ((entry["enabled"] as? Int) ?? 1 != 0)
+                if let p = (entry["value"] as? [String: Any])?["parameters"] as? [Int], p.count == 3 {
+                    key = p[1]; mods = NSEvent.ModifierFlags(rawValue: UInt(p[2])).intersection(relevant)
+                }
+            }
+            if enabled, UInt32(key) == c.key, mods == c.mods { return d.name }
+        }
+        return nil
+    }
 
     /// Registers `shortcut` ("" = none) to run `action`; does nothing when it is unchanged.
     static func set(_ shortcut: String, action: @escaping () -> Void) {
@@ -114,10 +143,10 @@ enum Hotkey {
         guard shortcut != registered else { return }
         registered = shortcut
         if let r = ref { UnregisterEventHotKey(r); ref = nil }
-        error = nil
+        registerError = nil
         guard !shortcut.isEmpty else { return }
-        guard let c = parse(shortcut) else { error = "config.toml: shortcut \"\(shortcut)\" is not a key combination"; return }
-        if let p = problem(c) { error = "config.toml: shortcut \(label(c)): \(p)"; return }
+        guard let c = parse(shortcut) else { registerError = "config.toml: shortcut \"\(shortcut)\" is not a key combination"; return }
+        if let p = problem(c) { registerError = "config.toml: shortcut \(label(c)): \(p)"; return }
         if handler == nil {
             var spec = EventTypeSpec(eventClass: OSType(kEventClassKeyboard), eventKind: UInt32(kEventHotKeyPressed))
             InstallEventHandler(GetApplicationEventTarget(), { _, _, _ in Hotkey.action(); return noErr }, 1, &spec, nil, &handler)
@@ -127,7 +156,7 @@ enum Hotkey {
         if status == noErr {
             Log.info("shortcut: \(shortcut)")
         } else {
-            error = "shortcut \(label(c)) could not be registered (\(status)); another app may use it"
+            registerError = "shortcut \(label(c)) could not be registered (\(status)); another app may use it"
         }
     }
 

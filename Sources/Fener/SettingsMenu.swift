@@ -187,7 +187,8 @@ private func shortcutRecorder() -> Mode {
             setSetting(nil, "shortcut", .string(Hotkey.string(combo)))
             guard Hotkey.error != nil else { launcher.pop(); return true }
             message = "\(Hotkey.label(combo)) is taken"
-            detail = "another app uses it; try another"
+            detail = Hotkey.systemOwner(combo).map { "macOS uses it for \($0); turn that off in Keyboard Shortcuts" }
+                ?? "another app uses it; try another"
         }
         launcher.refilter()
         return true

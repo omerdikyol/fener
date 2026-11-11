@@ -20,7 +20,8 @@ if args.count > 1, IPC.commands.contains(args[1]) {
 }
 
 if !args.contains("--bench"), IPC.isRunning() {
-    print("fener is already running")
+    // Opening fener.app (or running `fener`) again shows the panel.
+    _ = IPC.send(["show"])
     exit(0)
 }
 
@@ -74,7 +75,7 @@ refreshBrowserAndProjects()
 windows.refresh()
 
 try? FileManager.default.createDirectory(at: configDir, withIntermediateDirectories: true)
-writeConfigFiles()
+let firstRun = writeConfigFiles()
 let watcher = FolderWatcher(configDir.resolvingSymlinksInPath()) { applySettings() }
 
 if args.contains("--demo") {
@@ -103,6 +104,9 @@ Log.info("started (pid \(getpid()), \(apps.apps.count) apps, \(menus.menus.count
 problems.forEach { Log.error($0) }
 
 DispatchQueue.main.async {
+    // First run: start at login, and show the panel so a downloaded app visibly does something
+    // (with any shortcut clash listed at the top).
+    if firstRun, !args.contains("--demo") { registerLoginItem(); launcher.show() }
     guard args.contains("--show") || args.contains("--demo") else { return }
     launcher.show()
     if let i = args.firstIndex(of: "--query"), i + 1 < args.count {
@@ -115,4 +119,13 @@ DispatchQueue.main.async {
     }
 }
 
+/// Opening fener.app while it runs (Finder, Spotlight, `open`) shows the panel.
+final class AppDelegate: NSObject, NSApplicationDelegate {
+    func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows: Bool) -> Bool {
+        launcher.show()
+        return false
+    }
+}
+let appDelegate = AppDelegate()
+app.delegate = appDelegate
 app.run()

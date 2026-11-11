@@ -95,9 +95,29 @@ Alfred), or nothing to install (Spotlight).
 
 ## Install
 
-Requirements: macOS 14 or later, the Swift toolchain (Xcode or the Command Line Tools:
-`xcode-select --install`), and a [Nerd Font](https://www.nerdfonts.com) for the icons (the
-default theme uses JetBrainsMono Nerd Font; set another in a theme).
+fener needs macOS 14 or later and a [Nerd Font](https://www.nerdfonts.com) for its icons. The
+default theme uses JetBrainsMono Nerd Font (`brew install --cask font-jetbrains-mono-nerd-font`);
+a theme can set another.
+
+### Download
+
+1. Download `fener-<version>.zip` from [Releases](https://github.com/omerdikyol/fener/releases),
+   unzip it and move `fener.app` to Applications. It is signed and notarized by Apple, and
+   runs on Apple Silicon and Intel.
+2. Open it. The panel appears, and fener adds itself to Login Items (System Settings ›
+   General › Login Items) so it starts when you log in.
+3. Optionally, put the `fener` command on your PATH:
+
+   ```sh
+   mkdir -p ~/.local/bin && ln -sf /Applications/fener.app/Contents/MacOS/fener ~/.local/bin/fener
+   ```
+
+Opening fener.app again shows the panel. To remove it, choose System › Quit fener, turn it
+off in Login Items and delete the app.
+
+### Build from source
+
+You need the Swift toolchain (Xcode, or the Command Line Tools: `xcode-select --install`).
 
 ```sh
 git clone https://github.com/omerdikyol/fener.git
@@ -310,11 +330,10 @@ Screen Recording. macOS may ask once for:
 
 ## Limitations
 
-- fener is built from source with Swift; there is no notarized download yet.
 - Snippets are copied for you to paste, not typed, which would need Accessibility.
 - Window switching needs OmniWM. Some windows have no title there (`docs/known-issues.md`).
 - Bookmarks come only from Chromium-based browsers.
-- Tested on macOS 26 on Apple Silicon. macOS 14 and 15 should work but are untested.
+- Tested on macOS 26 on Apple Silicon. macOS 14 and 15 and Intel Macs should work but are untested.
 
 ## Development
 

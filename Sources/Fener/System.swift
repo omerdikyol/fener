@@ -36,6 +36,9 @@ struct SystemAction {
         SystemAction(name: "Eject All Disks", subtitle: "external drives and disk images", icon: "nf-md-eject", confirm: false) {
             Shell.sh("for d in $(diskutil list external | awk '/^\\/dev\\//{print $1}'); do diskutil eject \"$d\"; done")
         },
+        SystemAction(name: "Quit fener", subtitle: "until the next login, or open fener.app", icon: "nf-md-close_circle_outline", confirm: false) {
+            DispatchQueue.main.async { NSApp.terminate(nil) }
+        },
         SystemAction(name: "Restart Finder", subtitle: "Finder", icon: "nf-md-restart", confirm: false) { Shell.sh("killall Finder") },
         SystemAction(name: "Restart Dock", subtitle: "Dock", icon: "nf-md-restart", confirm: false) { Shell.sh("killall Dock") },
         SystemAction(name: "Hide Other Apps", subtitle: "system", icon: "nf-md-eye_off", confirm: false) {

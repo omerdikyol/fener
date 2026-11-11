@@ -1,4 +1,5 @@
 import AppKit
+import ServiceManagement
 
 // Shared state, settings and the panel. Globals outside main.swift are initialized lazily
 // on first use, so nothing here depends on file order; main.swift sets things up in order.
@@ -83,7 +84,9 @@ func applySettings() {
 
 /// Writes config.reference.toml (every option with its default; never read) and, on a first
 /// run, config.toml with the same defaults, so every setting can be found and edited in a file.
-func writeConfigFiles() {
+/// Returns true on a first run (config.toml was created).
+@discardableResult
+func writeConfigFiles() -> Bool {
     let ref = configDir.appendingPathComponent("config.reference.toml")
     let text = DefaultConfig.referenceHeader + DefaultConfig.text
     if (try? String(contentsOf: ref, encoding: .utf8)) != text { try? text.write(to: ref, atomically: true, encoding: .utf8) }
@@ -91,6 +94,23 @@ func writeConfigFiles() {
     if !FileManager.default.fileExists(atPath: cfg.path) {
         try? DefaultConfig.text.write(to: cfg, atomically: true, encoding: .utf8)
         Log.info("created config.toml with the default settings")
+        return true
+    }
+    return false
+}
+
+/// A downloaded fener.app (not installed by install.sh, which adds a LaunchAgent) adds itself
+/// to Login Items on its first run. The user can turn that off in System Settings › General ›
+/// Login Items.
+func registerLoginItem() {
+    let agent = FileManager.default.homeDirectoryForCurrentUser
+        .appendingPathComponent("Library/LaunchAgents/io.github.omerdikyol.fener.plist")
+    guard Bundle.main.bundleIdentifier != nil, !FileManager.default.fileExists(atPath: agent.path) else { return }
+    do {
+        try SMAppService.mainApp.register()
+        Log.info("added fener to Login Items")
+    } catch {
+        Log.error("could not add fener to Login Items: \(error.localizedDescription)")
     }
 }
 

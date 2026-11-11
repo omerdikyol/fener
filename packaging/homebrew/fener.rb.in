@@ -12,7 +12,6 @@ cask "fener" do
     strategy :github_latest
   end
 
-  depends_on cask: "font-jetbrains-mono-nerd-font"
   depends_on macos: :sonoma
 
   app "fener.app"
@@ -31,5 +30,8 @@ cask "fener" do
     fener's default shortcut is Cmd+Space, which Spotlight uses until you turn it off in
     System Settings > Keyboard > Keyboard Shortcuts > Spotlight. Or pick another shortcut in
     fener Settings. Open fener once to start it; it adds itself to Login Items.
+
+    Icons need a Nerd Font. If you have none:
+      brew install --cask font-jetbrains-mono-nerd-font
   EOS
 end

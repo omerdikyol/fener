@@ -78,8 +78,8 @@ And also:
 brew install --cask omerdikyol/tap/fener
 ```
 
-This also installs the JetBrains Mono Nerd Font for the icons and puts the `fener` command on
-your PATH. Open fener once; it adds itself to Login Items. `brew upgrade` keeps it current.
+This puts the `fener` command on your PATH. Icons need a Nerd Font:
+`brew install --cask font-jetbrains-mono-nerd-font` if you have none. Open fener once; it adds itself to Login Items. `brew upgrade` keeps it current.
 
 ### Download
 

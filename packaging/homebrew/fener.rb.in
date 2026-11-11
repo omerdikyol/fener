@@ -2,7 +2,7 @@ cask "fener" do
   version "@VERSION@"
   sha256 "@SHA256@"
 
-  url "https://github.com/omerdikyol/fener/releases/download/v#{version}/fener-#{version}.zip"
+  url "https://github.com/omerdikyol/fener/releases/download/v#{version}/fener-#{version}.dmg"
   name "fener"
   desc "Keyboard launcher configured in plain text"
   homepage "https://fener.omerdikyol.com/"

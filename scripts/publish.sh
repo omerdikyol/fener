@@ -2,7 +2,7 @@
 # Publishes a new version of fener:
 #   1. sets VERSION, commits and pushes it
 #   2. builds the notarized app (scripts/release.sh)
-#   3. creates the GitHub release vX.Y.Z with the zip and DMG and their SHA-256, and points
+#   3. creates the GitHub release vX.Y.Z with the DMG and its SHA-256, and points
 #      the website's and README's download links at the new DMG
 #   4. updates the Homebrew cask in the tap and pushes it
 #
@@ -55,7 +55,6 @@ fi
 
 # ---- 2. build ----
 run scripts/release.sh
-zip=".build/dist/fener-$version.zip"
 
 # ---- 3. GitHub release ----
 if [ $dry = 0 ]; then
@@ -66,7 +65,7 @@ fi
 if [ -n "$notes" ]; then notes_args="--notes-file $notes"; else notes_args="--generate-notes"; fi
 # shellcheck disable=SC2086
 dmg=".build/dist/fener-$version.dmg"
-run gh release create "v$version" --repo "$REPO" --target main --title "fener $version" $notes_args "$zip" "$zip.sha256" "$dmg" "$dmg.sha256"
+run gh release create "v$version" --repo "$REPO" --target main --title "fener $version" $notes_args "$dmg" "$dmg.sha256"
 
 # The website's and README's download links name the DMG, so they move to this version.
 if [ $dry = 0 ]; then

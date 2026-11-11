@@ -1,7 +1,6 @@
 #!/bin/sh
-# Builds a notarized fener.app for both Apple Silicon and Intel and zips it for a release:
-# .build/dist/fener-<version>.zip and fener-<version>.dmg with their SHA-256, and the Homebrew
-# cask (.build/dist/fener.rb).
+# Builds a notarized fener.app for both Apple Silicon and Intel and packs it for a release:
+# .build/dist/fener-<version>.dmg with its SHA-256, and the Homebrew cask (.build/dist/fener.rb).
 #
 # Needs a Developer ID Application certificate and notary credentials stored once with
 #   xcrun notarytool store-credentials fener-notary --apple-id <apple id> --team-id <team id>
@@ -12,24 +11,24 @@ cd "$(dirname "$0")/.."
 VERSION=$(cat VERSION)
 PROFILE=${FENER_NOTARY_PROFILE:-fener-notary}
 DIST=.build/dist
-ZIP="$DIST/fener-$VERSION.zip"
+DMG="$DIST/fener-$VERSION.dmg"
 
 FENER_UNIVERSAL=1 FENER_RELEASE=1 scripts/build-app.sh
 rm -rf "$DIST"; mkdir -p "$DIST"
 
-# Notarize a zip of the app, staple the ticket to the app, then zip the stapled app.
+# Apple takes the app as a zip for notarization; the ticket is then stapled to the app itself.
 ditto -c -k --keepParent .build/fener.app "$DIST/submit.zip"
 xcrun notarytool submit "$DIST/submit.zip" --keychain-profile "$PROFILE" --wait
 xcrun stapler staple .build/fener.app
 rm "$DIST/submit.zip"
-ditto -c -k --keepParent .build/fener.app "$ZIP"
-
 spctl --assess --type execute --verbose .build/fener.app
-(cd "$DIST" && shasum -a 256 "fener-$VERSION.zip" > "fener-$VERSION.zip.sha256")
-# The Homebrew cask for this release, for the omerdikyol/homebrew-tap repository (Casks/fener.rb).
-SHA=$(cut -d' ' -f1 "$ZIP.sha256")
-sed -e "s/@VERSION@/$VERSION/" -e "s/@SHA256@/$SHA/" packaging/homebrew/fener.rb.in > "$DIST/fener.rb"
+
+# The disk image people download, itself signed, notarized and stapled.
 scripts/make-dmg.sh
-echo "release: $ZIP"
-cat "$ZIP.sha256"
+
+# The Homebrew cask for this release, for the omerdikyol/homebrew-tap repository (Casks/fener.rb).
+SHA=$(cut -d' ' -f1 "$DMG.sha256")
+sed -e "s/@VERSION@/$VERSION/" -e "s/@SHA256@/$SHA/" packaging/homebrew/fener.rb.in > "$DIST/fener.rb"
+echo "release: $DMG"
+cat "$DMG.sha256"
 echo "cask:    $DIST/fener.rb"

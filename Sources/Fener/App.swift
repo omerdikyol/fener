@@ -61,7 +61,8 @@ func applySettings() {
     menus.load()
     snippets.load()
     config = c
-    let newProblems = p + menus.errors
+    Hotkey.set(c.shortcut) { launcher.toggle() }
+    let newProblems = p + menus.errors + [Hotkey.error].compactMap { $0 }
     if newProblems != problems { newProblems.forEach { Log.error($0) } }
     problems = newProblems
     configureClipboard(c)

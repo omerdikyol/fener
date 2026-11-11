@@ -5,8 +5,8 @@ dependencies, configured with plain TOML files. One key opens a panel; type to s
 files, windows, clipboard history, emoji, snippets, bookmarks and your own menus, or type a
 sum, a unit or currency conversion, or a time zone question and read the answer.
 
-fener stays resident (no Dock icon) and is shown and hidden from the command line, so any
-hotkey tool can open it. On an Apple Silicon Mac the panel is on screen about 30 ms after
+fener stays resident (no Dock icon) and opens with its own shortcut or from the command
+line, so any hotkey tool can open it too. On an Apple Silicon Mac the panel is on screen about 30 ms after
 the key press.
 
 ## Install
@@ -40,17 +40,23 @@ your apps.
 
 ### A key to open it
 
-fener has no global hotkey of its own, which is why it needs no Input Monitoring or
-Accessibility permission. Bind a key in any tool that can run a shell command:
+Set a shortcut in fener Settings › Shortcut (`fener show preferences`) and press the keys you
+want, or write it in `config.toml`:
 
-```sh
-~/.local/bin/fener toggle
+```toml
+shortcut = "shift+cmd+space"
 ```
 
-With [Karabiner-Elements](https://karabiner-elements.pqrs.org), `extras/karabiner-rule.json`
-maps Hyper+Space (Control+Option+Command+Space, for example Caps Lock remapped to Hyper) to
-that command. Add it under Complex Modifications, or paste it into the `rules` array of
-`~/.config/karabiner/karabiner.json`. skhd, Hammerspoon or BetterTouchTool work the same way.
+It needs Command or Control, or an F-key, since Option and Shift alone type characters on
+many layouts. fener registers it as a system hotkey, which needs no Input Monitoring or
+Accessibility permission. A shortcut another app already uses is reported in the panel.
+
+You can also leave `shortcut` empty and run `~/.local/bin/fener toggle` from any tool that
+can run a shell command. With [Karabiner-Elements](https://karabiner-elements.pqrs.org),
+`extras/karabiner-rule.json` maps Hyper+Space (Control+Option+Command+Space, for example
+Caps Lock remapped to Hyper) to that command. Add it under Complex Modifications, or paste
+it into the `rules` array of `~/.config/karabiner/karabiner.json`. skhd, Hammerspoon or
+BetterTouchTool work the same way.
 
 ## Using it
 

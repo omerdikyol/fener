@@ -69,6 +69,9 @@ func settingsMenuItems(_ q: String) -> [Item] {
 
     let groups: [(String, [Item])] = [
         ("Panel", [
+            Item(id: "pref:shortcut", title: "Shortcut",
+                 subtitle: c.shortcut.isEmpty ? "none" : (Hotkey.parse(c.shortcut).map(Hotkey.label) ?? c.shortcut) + (Hotkey.error == nil ? "" : " (not active)"),
+                 accessory: "›", icon: sf("nf-md-keyboard"), submenu: { shortcutRecorder() }),
             choice("Position", c.panelPosition, [("Center", "center"), ("Upper third", "upper"), ("Top", "top")], icon: "nf-md-arrow_expand_vertical") {
                 setSetting("panel", "position", .string($0)) },
             choice("Screen", c.panelScreen, [("Where the mouse is", "mouse"), ("Where the front window is", "focused"), ("With the menu bar", "main")],
@@ -155,4 +158,39 @@ private func sourcesMode() -> Mode {
             return i
         }
     }
+}
+
+/// Records a new shortcut: the next key pressed with Command or Control (or an F-key) is
+/// written to config.toml and registered at once. Plain keys and Option combinations are
+/// refused, since they type text. A shortcut another app already owns never reaches the panel.
+private func shortcutRecorder() -> Mode {
+    var message = "", detail = ""
+    var mode = Mode(prompt: "Press the new shortcut…", width: 560) { _ in
+        let current = config.shortcut.isEmpty ? "none" : Hotkey.parse(config.shortcut).map(Hotkey.label) ?? config.shortcut
+        var info = Item(id: "pref:shortcut:info", title: message.isEmpty ? "Press the new shortcut" : message,
+                        subtitle: detail.isEmpty ? "now: \(current)" : detail, icon: sf("nf-md-keyboard"))
+        info.then = .stay
+        var none = Item(id: "pref:shortcut:none", title: "No shortcut",
+                        subtitle: "bind fener toggle in another tool", icon: sf("nf-md-keyboard_off"),
+                        run: { setSetting(nil, "shortcut", .string("")) })
+        none.then = .back
+        return [info, none]
+    }
+    mode.onKey = { e in
+        let combo = Hotkey.combo(e)
+        // Escape, Return, arrows and Backspace alone keep their usual meaning.
+        if combo.mods.isEmpty, [53, 36, 76, 125, 126, 51].contains(Int(combo.key)) { return false }
+        if Hotkey.problem(combo) != nil {
+            message = "\(Hotkey.label(combo)) types text"
+            detail = "add ⌘ or ⌃ (or use an F-key)"
+        } else {
+            setSetting(nil, "shortcut", .string(Hotkey.string(combo)))
+            guard Hotkey.error != nil else { launcher.pop(); return true }
+            message = "\(Hotkey.label(combo)) is taken"
+            detail = "another app uses it; try another"
+        }
+        launcher.refilter()
+        return true
+    }
+    return mode
 }

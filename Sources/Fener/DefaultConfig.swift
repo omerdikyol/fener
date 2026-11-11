@@ -9,6 +9,13 @@ enum DefaultConfig {
 # A file in ~/.config/fener/themes/<name>.toml, or the built-in "tokyo-night".
 theme = "tokyo-night"
 
+# fener's own shortcut to show and hide the panel, e.g. "shift+cmd+space", or
+# "ctrl+opt+cmd+space" (Hyper+Space). It needs Command or Control, or is an F-key. Key names
+# follow the US layout's key positions: a-z, 0-9, space, return, tab, comma, period, slash,
+# semicolon, quote, minus, equal, grave, backslash, f1-f20, left, right, up, down.
+# "" = none: bind `fener toggle` in another tool instead. fener Settings > Shortcut records one.
+shortcut = ""
+
 # Learn which row you pick for which typed text ("g" then Ghostty puts Ghostty first for
 # "g"), and keep the last 10 picks for Find > Recently Used. Only picks are recorded, on
 # this Mac. false: learn nothing. System > Forget Search History clears it.

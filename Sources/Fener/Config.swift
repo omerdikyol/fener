@@ -4,6 +4,7 @@ import AppKit
 ///
 ///     theme = "tokyo-night"          # themes/<name>.toml, or the built-in tokyo-night
 ///     home = "menu"                  # menu shown while the search is empty; "" = app list
+///     shortcut = "cmd+shift+space"   # fener's own show/hide shortcut; "" = none
 ///     learn_queries = true           # rank rows you picked for the same text first; Recently Used
 ///     terminal_command = "open -na Ghostty --args --command={} --quit-after-last-window-closed=true"
 ///                                    # how `terminal = true` menu entries run; {} = the command
@@ -61,6 +62,7 @@ struct Config: Equatable {
     var theme = "tokyo-night"
     var learnQueries = true   // learn which row is picked for which typed text; Recently Used
     var home = "menu"   // menu listed while the search is empty; "" lists apps instead
+    var shortcut = ""   // fener's own show/hide shortcut, e.g. "ctrl+opt+cmd+space"; "" = none
     var terminal = "open -na Ghostty --args --command={} --quit-after-last-window-closed=true"
     var prefixes: [String: String] = ["calc": "=", "files": "/", "emoji": ":", "clipboard": "*", "menus": ">", "windows": ";", "snippets": "!"]
     var clipboardEnabled = true
@@ -117,6 +119,8 @@ struct Config: Equatable {
                 if let b = v as? Bool { c.learnQueries = b } else { warn("learn_queries must be true or false") }
             case "home":
                 if let s = v as? String { c.home = s } else { warn("home must be a string") }
+            case "shortcut":   // checked and reported when it is registered (Hotkey.set)
+                if let s = v as? String { c.shortcut = s } else { warn("shortcut must be a string like \"cmd+shift+space\"") }
             case "terminal_command", "terminal":   // "terminal" is the old name, still accepted
                 if let s = v as? String, s.contains("{}") { c.terminal = s } else { warn("\(k) must be a string containing {}") }
             case "prefixes":

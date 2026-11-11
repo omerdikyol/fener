@@ -63,6 +63,7 @@ struct Mode {
     var key = ""               // identifies one opened instance, e.g. for a refreshing menu
     var query = ""             // typed into the field when this mode opens
     var search: (String) -> [Item]
+    var onKey: ((NSEvent) -> Bool)? = nil  // sees every key first; true = handled (the shortcut recorder)
 }
 
 /// Borderless panel that can take keyboard focus without activating the app (like Spotlight),
@@ -288,6 +289,7 @@ final class Launcher: NSObject, NSWindowDelegate, NSTableViewDataSource, NSTable
     private func handleKey(_ e: NSEvent) -> Bool {
         let mods = e.modifierFlags.intersection([.command, .control, .option, .shift])
         let key = e.charactersIgnoringModifiers?.lowercased() ?? ""
+        if let k = mode.onKey, k(e) { return true }
         switch (e.keyCode, mods) {
         case (53, []): hide()                                  // escape
         case (51, []) where field.stringValue.isEmpty && stack.count > 1: pop()  // backspace on empty: back
@@ -372,7 +374,7 @@ final class Launcher: NSObject, NSWindowDelegate, NSTableViewDataSource, NSTable
         resize()  // the new mode may have its own width
     }
 
-    private func pop() {
+    func pop() {
         guard stack.count > 1 else { return }
         stack.removeLast()
         setPlaceholder()

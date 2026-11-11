@@ -63,6 +63,8 @@ do {
 }
 _ = launcher  // build and pre-warm the panel now (globals are lazy), after settings are loaded
 configureBehavior(config)
+Hotkey.set(config.shortcut) { launcher.toggle() }
+if let e = Hotkey.error { problems.append(e) }
 windows.onChange = { launcher.refilter() }
 files.onChange = { launcher.refilter() }
 rates.onChange = { launcher.refilter() }

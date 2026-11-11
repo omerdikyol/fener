@@ -2,7 +2,8 @@
 # Publishes a new version of fener:
 #   1. sets VERSION, commits and pushes it
 #   2. builds the notarized app (scripts/release.sh)
-#   3. creates the GitHub release vX.Y.Z with the zip and its SHA-256
+#   3. creates the GitHub release vX.Y.Z with the zip and DMG and their SHA-256, and points
+#      the website's and README's download links at the new DMG
 #   4. updates the Homebrew cask in the tap and pushes it
 #
 #   scripts/publish.sh 0.2.0 [--notes notes.md] [--dry-run]
@@ -64,7 +65,17 @@ if [ $dry = 0 ]; then
 fi
 if [ -n "$notes" ]; then notes_args="--notes-file $notes"; else notes_args="--generate-notes"; fi
 # shellcheck disable=SC2086
-run gh release create "v$version" --repo "$REPO" --target main --title "fener $version" $notes_args "$zip" "$zip.sha256"
+dmg=".build/dist/fener-$version.dmg"
+run gh release create "v$version" --repo "$REPO" --target main --title "fener $version" $notes_args "$zip" "$zip.sha256" "$dmg" "$dmg.sha256"
+
+# The website's and README's download links name the DMG, so they move to this version.
+if [ $dry = 0 ]; then
+    sed -i '' -E "s#releases/download/v[0-9.]+/fener-[0-9.]+\.dmg#releases/download/v$version/fener-$version.dmg#g" site/index.html README.md
+    git commit -qm "Download links: fener $version" site/index.html README.md
+    git push -q origin main
+else
+    echo "  would point the download links in site/index.html and README.md to fener-$version.dmg, commit and push"
+fi
 
 # ---- 4. Homebrew tap ----
 if [ ! -d "$TAP_DIR/.git" ]; then run gh repo clone "$TAP_REPO" "$TAP_DIR"; fi

@@ -17,7 +17,7 @@
   </p>
 </div>
 
-![fener searching for "pass": the Passwords app, two generated passwords, a System Settings pane and a web search](docs/images/banner.png)
+![fener's main menu: Apps, Find, Learn, Appearance, Trigger, Setup, Update, About and System](docs/images/banner.png)
 
 One shortcut opens fener. Type to launch apps, find files, copy from your clipboard history,
 pick an emoji, convert a currency or ask what time it is in Tokyo. Everything else, from the

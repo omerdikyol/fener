@@ -57,7 +57,7 @@ func load(_ path: String) -> NSImage {
 let a = CommandLine.arguments
 switch a[1] {
 case "banner":
-    let raw = load(a[2]), scale: CGFloat = 1.0
+    let raw = load(a[2]), scale: CGFloat = CommandLine.arguments.count > 5 ? CGFloat(Double(CommandLine.arguments[5])!) : 1.0
     let shot = NSImage(size: NSSize(width: raw.size.width * scale, height: raw.size.height * scale))
     shot.lockFocus(); raw.draw(in: NSRect(origin: .zero, size: shot.size)); shot.unlockFocus()
     let W = 2560, H = max(1280, Int(shot.size.height) + 320)

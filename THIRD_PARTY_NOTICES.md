@@ -9,7 +9,9 @@ fener is MIT licensed (see LICENSE). It includes or is based on the following:
   user has installed (for example JetBrainsMono Nerd Font).
 - **JetBrains Mono** (`site/fonts/`, the website only): a subset of JetBrains Mono Nerd Font,
   Copyright 2020 The JetBrains Mono Project Authors, SIL Open Font License 1.1
-  (`site/fonts/OFL.txt`). Nerd Fonts' icon glyphs in it are MIT licensed as above.
+  (`site/fonts/OFL-JetBrainsMono.txt`). Nerd Fonts' icon glyphs in it are MIT licensed as above.
+- **Hanken Grotesk** (`site/fonts/hanken.woff2`, the website only), Copyright 2021 The Hanken
+  Grotesk Project Authors, SIL Open Font License 1.1 (`site/fonts/OFL-HankenGrotesk.txt`).
 - **Tokyo Night** palette (the default theme's colors), from the Tokyo Night theme by
   enkia, https://github.com/enkia/tokyo-night-vscode-theme, MIT License.
 - **Catppuccin Mocha** palette (`extras/themes/catppuccin-mocha.toml`), from

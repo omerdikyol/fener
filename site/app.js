@@ -260,35 +260,47 @@ input.addEventListener("keydown", (e) => {
   else if (k === "Backspace" && !input.value && stack.length > 1) { e.preventDefault(); pop(); }
 });
 
-// "Try typing" buttons type into the panel, a character at a time.
 let typing = 0, demoOn = false;
-document.querySelectorAll(".try button").forEach((b) => b.addEventListener("click", () => {
-  demoOn = false;
-  const text = b.dataset.q, id = ++typing;
-  stack = [stack[0]]; input.placeholder = "Search…"; input.value = ""; filter(); input.focus();
-  const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
-  if (reduce) { input.value = text; return filter(); }
-  [...text].forEach((ch, i) => setTimeout(() => { if (id === typing) { input.value += ch; filter(); } }, 40 * i));
-}));
+const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-// ---- the config file section --------------------------------------------------------------
+// ---- static panels: answers rendered by the same engine, and the theme switch ----------------
 
-const toggle = document.getElementById("theme-toggle"), mini = document.getElementById("mini");
+function staticRows(el, q) {
+  const field = document.createElement("div"); field.className = "field"; field.textContent = q;
+  const ul = document.createElement("ul");
+  [answerItem(q)].filter(Boolean).forEach((it, i) => {
+    const li = document.createElement("li"); if (i === 0) li.className = "sel";
+    const ic = document.createElement("i"); ic.textContent = glyph(it.icon);
+    const b = document.createElement("b"); b.textContent = it.title;
+    li.append(ic, b);
+    const e = document.createElement("em"); e.textContent = "⏎ copies"; li.append(e);
+    ul.append(li);
+  });
+  el.append(field, ul);
+}
+document.querySelectorAll(".panel.mini[data-q]").forEach((el) => staticRows(el, el.dataset.q));
+
+const toggle = document.getElementById("theme-toggle"), themed = document.getElementById("themed");
 toggle.addEventListener("click", () => {
-  const next = mini.dataset.theme === "tokyo-night" ? "catppuccin-mocha" : "tokyo-night";
-  mini.dataset.theme = next; panel.dataset.theme = next;
+  const next = themed.dataset.theme === "tokyo-night" ? "catppuccin-mocha" : "tokyo-night";
+  themed.dataset.theme = next; panel.dataset.theme = next;
   toggle.textContent = `"${next}"`;
 });
 document.querySelectorAll("[data-icon]").forEach((el) => { el.textContent = glyph(el.dataset.icon); });
 
 document.querySelectorAll("[data-copy]").forEach((b) => b.addEventListener("click", async () => {
-  try { await navigator.clipboard.writeText(b.previousElementSibling.textContent); b.textContent = "copied"; }
-  catch { b.textContent = "select it"; }
-  setTimeout(() => (b.textContent = "copy"), 1600);
+  try { await navigator.clipboard.writeText(b.previousElementSibling.textContent); b.textContent = "Copied"; }
+  catch { b.textContent = "Select it"; }
+  setTimeout(() => (b.textContent = "Copy"), 1600);
 }));
 
-// Shows a few queries on its own after the lantern lights, until the visitor touches the panel.
-window.fenerDemo = () => {
+// The demo desktop's menu bar clock.
+const clock = document.getElementById("clock");
+const tick = () => { clock.textContent = new Date().toLocaleString("en-GB", { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }).replace(",", ""); };
+tick(); setInterval(tick, 20000);
+
+// The panel shows a few queries on its own until the visitor touches it.
+function demo() {
   if (input.value || document.activeElement === input) return;
   demoOn = true;
   const queries = ["100 usd to try", "time in tokyo", ":heart", "2 * (3 + 4)^2", "lock", ""];
@@ -297,11 +309,11 @@ window.fenerDemo = () => {
     if (!demoOn) return;
     const text = queries[qi++ % queries.length], id = ++typing;
     input.value = ""; filter();
-    [...text].forEach((ch, i) => setTimeout(() => { if (demoOn && id === typing) { input.value += ch; filter(); } }, 70 * i + 120));
-    setTimeout(step, 70 * text.length + (text ? 2300 : 1600));
+    [...text].forEach((ch, i) => setTimeout(() => { if (demoOn && id === typing) { input.value += ch; filter(); } }, 65 * i + 120));
+    setTimeout(step, 65 * text.length + (text ? 2400 : 1600));
   };
   step();
-};
+}
 const stopDemo = () => { if (demoOn) { demoOn = false; typing++; input.value = ""; filter(); } };
 panel.addEventListener("pointerdown", stopDemo);
 input.addEventListener("focus", stopDemo);
@@ -310,3 +322,4 @@ input.addEventListener("focus", stopDemo);
 const fromUrl = new URLSearchParams(location.search).get("q") || decodeURIComponent((location.hash.match(/^#q=(.*)$/) || [])[1] || "");
 if (fromUrl) input.value = fromUrl;
 filter();
+if (!fromUrl && !reduceMotion) setTimeout(demo, 1400);

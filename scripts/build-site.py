@@ -2,7 +2,7 @@
 """Builds the website's font subset and icon table from the icons the site uses.
 
 Needs fonttools and brotli (pip install fonttools brotli) and JetBrains Mono Nerd Font installed
-in ~/Library/Fonts. Writes site/icons.js and site/fonts/jbm-{regular,bold}.woff2.
+in ~/Library/Fonts. Writes site/icons.js and site/fonts/jbm-regular.woff2.
 """
 import os, re, subprocess, sys
 
@@ -32,7 +32,7 @@ text = ("U+0020-007E,U+00A0-017F,U+2013-2014,U+2018-201D,U+2022,U+2026,U+2190-21
         "U+2325,U+21E7,U+2303,U+23CE,U+238B,U+232B,U+20AC,U+00D7,U+00F7,U+00B0,U+203A")
 icons = ",".join("U+" + glyphs[u] for u in sorted(used))
 fonts = os.path.expanduser("~/Library/Fonts")
-for weight, extra in (("Regular", "," + icons), ("Bold", "")):
+for weight, extra in (("Regular", "," + icons),):   # the page uses one weight of the mono
     subprocess.run(["pyftsubset", os.path.join(fonts, f"JetBrainsMonoNerdFont-{weight}.ttf"), f"--unicodes={text}{extra}",
                     "--flavor=woff2", "--layout-features=kern,liga,calt",
                     f"--output-file={os.path.join(site, 'fonts', 'jbm-' + weight.lower() + '.woff2')}"], check=True)

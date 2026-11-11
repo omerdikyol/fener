@@ -230,10 +230,9 @@ final class Launcher: NSObject, NSWindowDelegate, NSTableViewDataSource, NSTable
         let maxH = chromeH + theme.rowHeight * (CGFloat(theme.visibleRows) + 0.5)
         topY = behavior.top(in: vf, height: maxH)
         centerX = vf.midX
-        panel.setFrameOrigin(NSPoint(x: (vf.midX - theme.width / 2).rounded(), y: topY - panel.frame.height))
         if !field.stringValue.isEmpty { field.stringValue = "" }
         filter()
-        if modeWidth != panel.frame.width { resize() }
+        resize()   // always: filter() skips it when the rows are unchanged, and the screen may differ
         // Start half visible: a fade from 0 spends its first composited frame fully transparent,
         // which delayed the panel by about a frame.
         panel.alphaValue = 0.5

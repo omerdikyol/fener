@@ -4,6 +4,7 @@
   <p><b>The keyboard launcher for macOS you configure with text files.</b><br>
   Fast, private and native. Free and open source.</p>
   <p>
+    <a href="https://fener.omerdikyol.com"><b>Website</b></a> ·
     <a href="https://github.com/omerdikyol/fener/releases/latest"><b>Download</b></a> ·
     <a href="#install">Install</a> ·
     <a href="#features">Features</a> ·

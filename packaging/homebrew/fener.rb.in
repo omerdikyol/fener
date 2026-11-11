@@ -5,7 +5,7 @@ cask "fener" do
   url "https://github.com/omerdikyol/fener/releases/download/v#{version}/fener-#{version}.zip"
   name "fener"
   desc "Keyboard launcher configured in plain text"
-  homepage "https://omerdikyol.github.io/fener/"
+  homepage "https://fener.omerdikyol.com/"
 
   livecheck do
     url :url

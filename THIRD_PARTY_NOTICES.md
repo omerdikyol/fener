@@ -12,6 +12,9 @@ fener is MIT licensed (see LICENSE). It includes or is based on the following:
   (`site/fonts/OFL-JetBrainsMono.txt`). Nerd Fonts' icon glyphs in it are MIT licensed as above.
 - **Hanken Grotesk** (`site/fonts/hanken.woff2`, the website only), Copyright 2021 The Hanken
   Grotesk Project Authors, SIL Open Font License 1.1 (`site/fonts/OFL-HankenGrotesk.txt`).
+- **Primer Octicons** (`site/index.html`, the website only): the GitHub mark and star icons,
+  https://github.com/primer/octicons, Copyright (c) GitHub Inc., MIT License. The GitHub mark
+  is GitHub's trademark and is used to link to the project on GitHub.
 - **Tokyo Night** palette (the default theme's colors), from the Tokyo Night theme by
   enkia, https://github.com/enkia/tokyo-night-vscode-theme, MIT License.
 - **Catppuccin Mocha** palette (`extras/themes/catppuccin-mocha.toml`), from

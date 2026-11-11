@@ -141,9 +141,7 @@ Details are in the [guide](docs/guide.md#privacy-and-permissions).
 
 ## How it compares
 
-Raycast and Alfred are polished apps you set up in their settings. Hammerspoon is configured
-in code, but out of the box it does nothing: you build the launcher yourself in Lua. fener is
-in between: a ready-made launcher, configured in text.
+Every one of these is a good launcher. Here is how fener differs.
 
 | | fener | Spotlight | Raycast | Alfred | Sol | Hammerspoon |
 | --- | --- | --- | --- | --- | --- | --- |

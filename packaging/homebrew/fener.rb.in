@@ -1,0 +1,35 @@
+cask "fener" do
+  version "@VERSION@"
+  sha256 "@SHA256@"
+
+  url "https://github.com/omerdikyol/fener/releases/download/v#{version}/fener-#{version}.zip"
+  name "fener"
+  desc "Keyboard launcher configured in plain text"
+  homepage "https://omerdikyol.github.io/fener/"
+
+  livecheck do
+    url :url
+    strategy :github_latest
+  end
+
+  depends_on cask: "font-jetbrains-mono-nerd-font"
+  depends_on macos: :sonoma
+
+  app "fener.app"
+  binary "#{appdir}/fener.app/Contents/MacOS/fener"
+
+  uninstall quit: "io.github.omerdikyol.fener"
+
+  zap trash: [
+    "~/.config/fener",
+    "~/Library/Application Support/fener",
+    "~/Library/Caches/fener",
+    "~/Library/Logs/fener",
+  ]
+
+  caveats <<~EOS
+    fener's default shortcut is Cmd+Space, which Spotlight uses until you turn it off in
+    System Settings > Keyboard > Keyboard Shortcuts > Spotlight. Or pick another shortcut in
+    fener Settings. Open fener once to start it; it adds itself to Login Items.
+  EOS
+end

@@ -71,6 +71,15 @@ And also:
 
 ## Install
 
+### Homebrew
+
+```sh
+brew install --cask omerdikyol/tap/fener
+```
+
+This also installs the JetBrains Mono Nerd Font for the icons and puts the `fener` command on
+your PATH. Open fener once; it adds itself to Login Items. `brew upgrade` keeps it current.
+
 ### Download
 
 1. Download the latest `fener-<version>.zip` from [Releases](https://github.com/omerdikyol/fener/releases/latest), unzip it and move `fener.app` to Applications.

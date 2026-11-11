@@ -1,6 +1,6 @@
 #!/bin/sh
 # Builds a notarized fener.app for both Apple Silicon and Intel and zips it for a release:
-# .build/dist/fener-<version>.zip and its SHA-256.
+# .build/dist/fener-<version>.zip, its SHA-256, and the Homebrew cask (.build/dist/fener.rb).
 #
 # Needs a Developer ID Application certificate and notary credentials stored once with
 #   xcrun notarytool store-credentials fener-notary --apple-id <apple id> --team-id <team id>
@@ -25,5 +25,9 @@ ditto -c -k --keepParent .build/fener.app "$ZIP"
 
 spctl --assess --type execute --verbose .build/fener.app
 (cd "$DIST" && shasum -a 256 "fener-$VERSION.zip" > "fener-$VERSION.zip.sha256")
+# The Homebrew cask for this release, for the omerdikyol/homebrew-tap repository (Casks/fener.rb).
+SHA=$(cut -d' ' -f1 "$ZIP.sha256")
+sed -e "s/@VERSION@/$VERSION/" -e "s/@SHA256@/$SHA/" packaging/homebrew/fener.rb.in > "$DIST/fener.rb"
 echo "release: $ZIP"
 cat "$ZIP.sha256"
+echo "cask:    $DIST/fener.rb"

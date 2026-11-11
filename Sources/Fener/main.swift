@@ -126,6 +126,22 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         return false
     }
 }
+// An app with no menu bar still routes Cmd+V, C, X, A and Z to the search field through its
+// main menu, which is never shown.
+do {
+    let edit = NSMenu(title: "Edit")
+    for (title, action, key, mods) in [("Undo", "undo:", "z", NSEvent.ModifierFlags.command), ("Redo", "redo:", "z", [.command, .shift]),
+                                       ("Cut", "cut:", "x", .command), ("Copy", "copy:", "c", .command),
+                                       ("Paste", "paste:", "v", .command), ("Select All", "selectAll:", "a", .command)] {
+        let item = NSMenuItem(title: title, action: Selector(action), keyEquivalent: key)
+        item.keyEquivalentModifierMask = mods
+        edit.addItem(item)
+    }
+    let main = NSMenu(), editItem = NSMenuItem()
+    editItem.submenu = edit
+    main.addItem(editItem)
+    app.mainMenu = main
+}
 let appDelegate = AppDelegate()
 app.delegate = appDelegate
 app.run()

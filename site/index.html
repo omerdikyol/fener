@@ -30,20 +30,23 @@
   </header>
 
   <main>
-    <section class="hero wrap">
-      <h1>The keyboard launcher <br class="wide">you configure in text.</h1>
-      <p class="lead">Apps, files, clipboard history, emoji, quick answers and your own menus behind one shortcut.
-        Native, private and open source.</p>
-      <div class="actions">
-        <a class="btn" href="https://github.com/omerdikyol/fener/releases/latest">Download for Mac</a>
-        <a class="btn ghost" href="https://github.com/omerdikyol/fener">View source</a>
+    <section class="hero-band">
+      <canvas class="sky" data-scene="hang" aria-hidden="true"></canvas>
+      <div class="hero wrap">
+        <h1>The keyboard launcher <br class="wide">you configure in text.</h1>
+        <p class="lead">Apps, files, clipboard history, emoji, quick answers and your own menus behind one shortcut.
+          Native, private and open source.</p>
+        <div class="actions">
+          <a class="btn" href="https://github.com/omerdikyol/fener/releases/latest">Download for Mac</a>
+          <a class="btn ghost" href="https://github.com/omerdikyol/fener">View source</a>
+        </div>
+        <p class="req">macOS 14 or later · Apple Silicon and Intel · Free, MIT license</p>
       </div>
-      <p class="req">macOS 14 or later · Apple Silicon and Intel · Free, MIT license</p>
     </section>
 
     <section class="stage wrap" aria-label="Live demo">
       <div class="desktop">
-        <canvas class="scene" aria-hidden="true"></canvas>
+        <canvas class="scene" data-scene="desktop" aria-hidden="true"></canvas>
         <div class="menubar" aria-hidden="true">
           <span class="mb-left"><b>Finder</b><span>File</span><span>Edit</span><span>View</span><span>Go</span><span>Window</span><span>Help</span></span>
           <span class="mb-right" id="clock"></span>
@@ -88,6 +91,7 @@
 <span class="k">command</span> = <span class="s">"open -a Screenshot"</span></pre>
         </div>
         <div class="result">
+          <canvas class="lamp" data-scene="glow" aria-hidden="true"></canvas>
           <div class="panel static" id="mini">
             <div class="field placeholder">Capture…</div>
             <ul>
@@ -118,6 +122,7 @@
 <span class="k">ignore_apps</span> = [<span class="s">"1Password"</span>]</pre>
         </div>
         <div class="result">
+          <canvas class="lamp" data-scene="glow" aria-hidden="true"></canvas>
           <div class="panel static" id="themed" data-theme="tokyo-night">
             <div class="field placeholder">Search…</div>
             <ul>
@@ -178,9 +183,12 @@
     </section>
   </main>
 
-  <footer class="wrap">
+  <footer class="foot-band">
+    <canvas class="ground" data-scene="ground" aria-hidden="true"></canvas>
+    <div class="foot wrap">
     <div class="foot-brand"><img src="icon-256.png" alt="" width="32" height="32"><p><b>fener</b> means lantern in Turkish.</p></div>
     <nav><a href="https://github.com/omerdikyol/fener">Source</a><a href="https://github.com/omerdikyol/fener/blob/main/docs/guide.md">Guide</a><a href="https://github.com/omerdikyol/fener/releases">Releases</a><a href="https://github.com/omerdikyol/fener/blob/main/LICENSE">MIT license</a></nav>
+    </div>
   </footer>
 
   <script src="icons.js"></script>

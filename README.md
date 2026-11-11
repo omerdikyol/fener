@@ -141,28 +141,24 @@ Details are in the [guide](docs/guide.md#privacy-and-permissions).
 
 ## How it compares
 
-Every one of these is a good launcher. Here is how fener differs.
+Raycast and Alfred are polished apps you set up in their settings. Hammerspoon is configured
+in code, but out of the box it does nothing: you build the launcher yourself in Lua. fener is
+in between: a ready-made launcher, configured in text.
 
-| | fener | Spotlight (macOS 26) | Raycast | Alfred |
-| --- | --- | --- | --- | --- |
-| Price | free | built in | free core; Pro subscription | free core; paid Powerpack |
-| Source | open (MIT) | closed | closed app, open extensions | closed |
-| Account | none | none | needed for cloud features | none |
-| Network | ECB rates only | Apple services (suggestions) | yes | update checks |
-| Configured with | TOML files and the panel | System Settings | the app's UI | the app's UI |
-| Extend with | shell commands and scripts | Shortcuts, app actions | extension store (TypeScript) | workflows (Powerpack) |
-| Clipboard history | yes, encrypted | yes | yes (longer with Pro) | Powerpack |
-| Snippets | copy to paste | no | yes, auto-expand | Powerpack, auto-expand |
-| Window switching | OmniWM only | no | yes | via workflows |
-| AI features | no | Apple Intelligence | yes (Pro) | via workflows |
-| Themes | TOML files | no | Pro | Powerpack |
+| | fener | Spotlight | Raycast | Alfred | Sol | Hammerspoon |
+| --- | --- | --- | --- | --- | --- | --- |
+| What it is | Launcher | Launcher | Launcher and extension store | Launcher and workflows | Launcher | Lua automation toolkit |
+| Price | Free | Built in | Free, Pro plan | Free, paid Powerpack | Free | Free |
+| Source | Open, MIT | Closed | Closed | Closed | Open, MIT | Open, MIT |
+| Configured in | Text files and the panel | System Settings | The app | The app | The app | Lua you write |
+| Extend with | Shell commands and scripts | Shortcuts | TypeScript extensions | Workflows | AppleScript and scripts | Lua |
+| Clipboard history | Built in, encrypted | Built in | Built in | Powerpack | Built in | Add-on (Spoons) |
+| Built with | Swift, AppKit | Apple | Native app | Native app | React Native | Objective-C, Lua |
 
-**Choose fener** if you want a launcher you configure in text, keep in your dotfiles, read
-the whole source of, and trust not to talk to the network.
-
-**Choose something else** if you want a large catalog of ready-made extensions (Raycast or
-Alfred), AI chat in the launcher (Raycast), snippets that expand as you type (Raycast or
-Alfred), or nothing to install (Spotlight).
+**Choose fener** if you want a launcher that works out of the box, lives in your dotfiles, and
+sends nothing anywhere. **Choose something else** for a large catalog of ready-made
+extensions or AI (Raycast), snippets that type themselves (Raycast, Alfred), full desktop
+automation (Hammerspoon), or nothing to install (Spotlight).
 
 ## FAQ
 

@@ -1,4 +1,4 @@
 .build/
 *.png
-!docs/*.png
+!docs/images/*.png
 .DS_Store

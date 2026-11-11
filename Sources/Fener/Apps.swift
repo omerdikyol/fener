@@ -29,7 +29,7 @@ enum AppScanner {
             guard let names = try? fm.contentsOfDirectory(atPath: dir) else { return }
             for n in names where !n.hasPrefix(".") {
                 let p = dir + "/" + n
-                if n.hasSuffix(".app") { add(p) }
+                if n.hasSuffix(".app") { if n != "fener.app" { add(p) } }   // not itself
                 else if depth > 0, (try? fm.attributesOfItem(atPath: p)[.type] as? FileAttributeType) == .typeDirectory {
                     walk(p, depth: depth - 1)
                 }

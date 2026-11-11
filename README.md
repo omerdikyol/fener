@@ -105,9 +105,15 @@ cd fener
 ./scripts/install.sh
 ```
 
-The script builds a release binary, copies it to `~/.local/bin/fener`, and starts it as a
-LaunchAgent (`io.github.omerdikyol.fener`), so it runs at login and restarts if it crashes.
-Run it again to update. `./scripts/uninstall.sh` stops and removes it and leaves your
+The script builds `fener.app` into `~/Applications`, links the `fener` command to
+`~/.local/bin/fener`, and starts it as a LaunchAgent (`io.github.omerdikyol.fener`), so it
+runs at login and restarts if it crashes. Run it again to update.
+
+If you have a code-signing certificate (an Apple developer account's "Developer ID
+Application" or "Apple Development"), the script signs the app with it, and macOS keeps
+recognizing fener after you rebuild: the Keychain and privacy permissions do not ask again.
+Set `FENER_SIGN_IDENTITY` to choose one. Without a certificate the app is signed ad hoc and
+macOS treats every rebuild as a new app. `./scripts/uninstall.sh` stops and removes it and leaves your
 config alone.
 
 On its first start fener creates `~/.config/fener/config.toml` with every default. To start
@@ -297,14 +303,14 @@ Copy `extras/themes/tokyo-night.toml` to `themes/<name>.toml`, change what you l
 fener asks for no permissions up front and does not need Accessibility, Input Monitoring or
 Screen Recording. macOS may ask once for:
 
-- Keychain access, when the clipboard key is first read. Because the binary is built locally
-  and not signed, macOS may ask again after you rebuild; choose Always Allow.
+- Keychain access, when the clipboard key is first read; choose Always Allow. If the app is
+  signed ad hoc (no certificate), macOS asks again after each rebuild.
 - Automation of System Events or Finder, the first time you use Restart, Shut Down, Log Out
   or Empty Trash.
 
 ## Limitations
 
-- fener is built from source with Swift; there is no signed app download yet.
+- fener is built from source with Swift; there is no notarized download yet.
 - Snippets are copied for you to paste, not typed, which would need Accessibility.
 - Window switching needs OmniWM. Some windows have no title there (`docs/known-issues.md`).
 - Bookmarks come only from Chromium-based browsers.

@@ -16,5 +16,5 @@ Possible fixes:
 
 1. Report it upstream to OmniWM (preferred; no change in fener).
 2. When OmniWM's title is empty, read the title through Accessibility. That needs the
-   Accessibility permission, and an unsigned binary loses that grant on every rebuild, so
-   it only makes sense once fener ships as a signed app bundle.
+   Accessibility permission. fener is now a signed app bundle when a certificate is
+   available, so that grant would survive rebuilds; this fallback is not built yet.

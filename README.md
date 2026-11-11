@@ -1,13 +1,97 @@
 # fener
 
-A keyboard launcher for macOS, in the spirit of Omarchy's menus. Native Swift and AppKit, no
-dependencies, configured with plain TOML files. One key opens a panel; type to search apps,
-files, windows, clipboard history, emoji, snippets, bookmarks and your own menus, or type a
-sum, a unit or currency conversion, or a time zone question and read the answer.
+**A fast, private, keyboard-first launcher for macOS that you configure with text files.**
 
-fener stays resident (no Dock icon) and opens with its own shortcut or from the command
-line, so any hotkey tool can open it too. On an Apple Silicon Mac the panel is on screen about 30 ms after
-the key press.
+Native Swift and AppKit, no dependencies, no account, nothing sent over the network. One
+shortcut opens a panel: search apps, files, emoji, clipboard history, snippets and System
+Settings, get instant answers for sums, units, currencies and time zones, and build your own
+menus out of shell commands. Inspired by the menus of [Omarchy](https://omarchy.org).
+
+*Fener* is Turkish for lantern.
+
+![Searching for "pass": apps, generated passwords, a System Settings pane and the web search row](docs/images/search.png)
+
+## Why fener
+
+- **Quick.** About 30 ms from key press to panel on an Apple Silicon Mac. It is a resident
+  native app with no web view.
+- **Private.** No telemetry, no update checks, no account. The only network request is the
+  European Central Bank's public exchange-rate file, and only when you convert a currency.
+  Clipboard history is encrypted on disk.
+- **Few permissions.** It works without Accessibility, Input Monitoring or Screen Recording.
+- **Plain text.** Settings, menus, themes, snippets and web searches are TOML or shell
+  scripts in `~/.config/fener`, easy to keep in your dotfiles. Changes apply when you save.
+  Most settings can also be changed in the panel.
+- **Yours to extend.** Any shell command can become a menu entry, and any script that
+  prints lines can become a menu.
+- **Small.** About 5,000 lines of Swift, MIT licensed. A clean release build takes about 15 seconds.
+
+## Screenshots
+
+| | |
+| :---: | :---: |
+| ![The main menu shown while the search is empty](docs/images/home.png) | ![Emoji search for "heart"](docs/images/emoji.png) |
+| The main menu, listed while the search is empty | Emoji and symbols, with `:` |
+| ![A custom menu with toggles, a timer, generators, audio devices and more](docs/images/trigger.png) | ![fener Settings: shortcut, position, screen, animation and theme](docs/images/settings.png) |
+| A menu from `menus/trigger.toml` | fener Settings, saved to `config.toml` |
+
+Answers as you type:
+
+| | |
+| :---: | :---: |
+| ![2 * (3 + 4)^2 = 98](docs/images/calc.png) | ![100 USD in Turkish lira](docs/images/currency.png) |
+| ![15:00 in Istanbul is 12:00 in London](docs/images/time.png) | ![10 km is 6.21 miles](docs/images/units.png) |
+
+Cmd+K shows more actions for the selected row:
+
+![Actions for Calculator: Show in Finder, Copy Path](docs/images/actions.png)
+
+## Features
+
+- **Apps**, ranked by how often and how recently you open them. fener also learns which row
+  you pick for what you type.
+- **Files** through Spotlight, plus **Recent Files** and **Screenshots** views with thumbnails.
+- **Clipboard history**: text, files and images, encrypted, with password-manager copies
+  skipped.
+- **Calculator and units**, **currency conversion** (ECB rates), and **time zones and date
+  math** (`days until dec 31`).
+- **Emoji and symbols**, **snippets** with placeholders, and an offline **dictionary**.
+- **System**: lock, sleep, restart, empty Trash and more, plus System Settings panes, audio
+  output and input switching, a process list (`:3000` finds what listens on a port), and a
+  color picker.
+- **Generators**: UUIDs, passwords and lorem ipsum.
+- **Browser bookmarks** (Chromium-based browsers), **editor projects** (VS Code, Cursor,
+  VSCodium, Windsurf) and **web searches** with keywords (`gh swift toml`).
+- **Windows** from the [OmniWM](https://omniwm.app) tiling window manager.
+- **Your own menus**: TOML files or scripts, with submenus, confirmations, terminal commands
+  and live-refreshing entries.
+- **Themes**: Tokyo Night by default, Catppuccin Mocha included, or your own colors, font
+  and layout.
+
+## Compared with other launchers
+
+Every one of these is a good launcher. Here is how fener differs.
+
+| | fener | Spotlight (macOS 26) | Raycast | Alfred |
+| --- | --- | --- | --- | --- |
+| Price | free | built in | free core; Pro subscription | free core; paid Powerpack |
+| Source | open (MIT) | closed | closed app, open extensions | closed |
+| Account | none | none | needed for cloud features | none |
+| Network | ECB rates only | Apple services (suggestions) | yes | update checks |
+| Configured with | TOML files and the panel | System Settings | the app's UI | the app's UI |
+| Extend with | shell commands and scripts | Shortcuts, app actions | extension store (TypeScript) | workflows (Powerpack) |
+| Clipboard history | yes, encrypted | yes | yes (longer with Pro) | Powerpack |
+| Snippets | copy to paste | no | yes, auto-expand | Powerpack, auto-expand |
+| Window switching | OmniWM only | no | yes | via workflows |
+| AI features | no | Apple Intelligence | yes (Pro) | via workflows |
+| Themes | TOML files | no | Pro | Powerpack |
+
+**Choose fener** if you want a launcher you configure in text, keep in your dotfiles, read
+the whole source of, and trust not to talk to the network.
+
+**Choose something else** if you want a large catalog of ready-made extensions (Raycast or
+Alfred), AI chat in the launcher (Raycast), snippets that expand as you type (Raycast or
+Alfred), or nothing to install (Spotlight).
 
 ## Install
 
@@ -108,7 +192,7 @@ your own in `quicklinks.toml`.
 
 ```
 fener toggle               show or hide the panel
-fener show <menu> [text]   open a menu or built-in view, optionally with text typed
+fener show <menu> [text]   open a menu or built-in view (or "search"), optionally with text typed
 fener hide
 fener reload               re-read config, menus, themes and apps
 fener pick-color           pick a color on screen; copies its hex value
@@ -217,6 +301,14 @@ Screen Recording. macOS may ask once for:
   and not signed, macOS may ask again after you rebuild; choose Always Allow.
 - Automation of System Events or Finder, the first time you use Restart, Shut Down, Log Out
   or Empty Trash.
+
+## Limitations
+
+- fener is built from source with Swift; there is no signed app download yet.
+- Snippets are copied for you to paste, not typed, which would need Accessibility.
+- Window switching needs OmniWM. Some windows have no title there (`docs/known-issues.md`).
+- Bookmarks come only from Chromium-based browsers.
+- Tested on macOS 26 on Apple Silicon. macOS 14 and 15 should work but are untested.
 
 ## Development
 

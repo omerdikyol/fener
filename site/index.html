@@ -43,6 +43,7 @@
 
     <section class="stage wrap" aria-label="Live demo">
       <div class="desktop">
+        <canvas class="scene" aria-hidden="true"></canvas>
         <div class="menubar" aria-hidden="true">
           <span class="mb-left"><b>Finder</b><span>File</span><span>Edit</span><span>View</span><span>Go</span><span>Window</span><span>Help</span></span>
           <span class="mb-right" id="clock"></span>
@@ -52,7 +53,7 @@
           <ul id="rows" role="listbox"></ul>
         </div>
       </div>
-      <p class="caption" id="status">Live demo. Click the panel and type: <kbd>↑</kbd> <kbd>↓</kbd> to move, <kbd>return</kbd> to run, <kbd>esc</kbd> to clear.</p>
+      <p class="caption" id="status">Live demo. Click the panel and type, or move over the desktop to carry the lantern.</p>
     </section>
 
     <section id="answers" class="feature wrap">
@@ -184,5 +185,6 @@
 
   <script src="icons.js"></script>
   <script src="app.js"></script>
+  <script src="lantern.js"></script>
 </body>
 </html>

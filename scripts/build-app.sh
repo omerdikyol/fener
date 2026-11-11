@@ -44,8 +44,9 @@ fi
 # The bundle.
 STAGE=.build/fener.app
 rm -rf "$STAGE"
-mkdir -p "$STAGE/Contents/MacOS"
+mkdir -p "$STAGE/Contents/MacOS" "$STAGE/Contents/Resources"
 cp "$BUILT" "$STAGE/Contents/MacOS/fener"
+cp assets/AppIcon.icns "$STAGE/Contents/Resources/AppIcon.icns"
 cat > "$STAGE/Contents/Info.plist" <<PLIST
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -54,6 +55,7 @@ cat > "$STAGE/Contents/Info.plist" <<PLIST
   <key>CFBundleIdentifier</key><string>$LABEL</string>
   <key>CFBundleName</key><string>fener</string>
   <key>CFBundleExecutable</key><string>fener</string>
+  <key>CFBundleIconFile</key><string>AppIcon</string>
   <key>CFBundlePackageType</key><string>APPL</string>
   <key>CFBundleShortVersionString</key><string>$VERSION</string>
   <key>CFBundleVersion</key><string>$VERSION</string>

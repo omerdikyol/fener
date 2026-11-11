@@ -1,74 +1,136 @@
-# fener
+<div align="center">
+  <img src="assets/icon-1024.png" width="128" alt="fener app icon: a glowing lantern">
+  <h1>fener</h1>
+  <p><b>The keyboard launcher for macOS you configure with text files.</b><br>
+  Fast, private and native. Free and open source.</p>
+  <p>
+    <a href="https://github.com/omerdikyol/fener/releases/latest"><b>Download</b></a> ·
+    <a href="#install">Install</a> ·
+    <a href="#features">Features</a> ·
+    <a href="docs/guide.md">Guide</a>
+  </p>
+  <p>
+    <a href="https://github.com/omerdikyol/fener/releases/latest"><img src="https://img.shields.io/github/v/release/omerdikyol/fener?style=flat-square&color=7aa2f7&label=release" alt="Latest release"></a>
+    <img src="https://img.shields.io/badge/macOS-14%2B-bb9af7?style=flat-square" alt="macOS 14 or later">
+    <img src="https://img.shields.io/badge/Swift-native-ff9e64?style=flat-square" alt="Native Swift">
+    <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-9ece6a?style=flat-square" alt="MIT license"></a>
+  </p>
+</div>
 
-**A fast, private, keyboard-first launcher for macOS that you configure with text files.**
+![fener searching for "pass": the Passwords app, two generated passwords, a System Settings pane and a web search](docs/images/banner.png)
 
-Native Swift and AppKit, no dependencies, no account, nothing sent over the network. One
-shortcut opens a panel: search apps, files, emoji, clipboard history, snippets and System
-Settings, get instant answers for sums, units, currencies and time zones, and build your own
-menus out of shell commands. Inspired by the menus of [Omarchy](https://omarchy.org).
+One shortcut opens fener. Type to launch apps, find files, copy from your clipboard history,
+pick an emoji, convert a currency or ask what time it is in Tokyo. Everything else, from the
+theme to your own menus, is a text file in `~/.config/fener` that applies the moment you
+save it.
 
-*Fener* is Turkish for lantern.
+*Fener* means lantern in Turkish.
 
-![Searching for "pass": apps, generated passwords, a System Settings pane and the web search row](docs/images/search.png)
-
-## Why fener
-
-- **Quick.** About 30 ms from key press to panel on an Apple Silicon Mac. It is a resident
-  native app with no web view.
-- **Private.** No telemetry, no update checks, no account. The only network request is the
-  European Central Bank's public exchange-rate file, and only when you convert a currency.
-  Clipboard history is encrypted on disk.
-- **Few permissions.** It works without Accessibility, Input Monitoring or Screen Recording.
-- **Plain text.** Settings, menus, themes, snippets and web searches are TOML or shell
-  scripts in `~/.config/fener`, easy to keep in your dotfiles. Changes apply when you save.
-  Most settings can also be changed in the panel.
-- **Yours to extend.** Any shell command can become a menu entry, and any script that
-  prints lines can become a menu.
-- **Small.** About 5,000 lines of Swift, MIT licensed. A clean release build takes about 15 seconds.
-
-## Screenshots
-
-| | |
-| :---: | :---: |
-| ![The main menu shown while the search is empty](docs/images/home.png) | ![Emoji search for "heart"](docs/images/emoji.png) |
-| The main menu, listed while the search is empty | Emoji and symbols, with `:` |
-| ![A custom menu with toggles, a timer, generators, audio devices and more](docs/images/trigger.png) | ![fener Settings: shortcut, position, screen, animation and theme](docs/images/settings.png) |
-| A menu from `menus/trigger.toml` | fener Settings, saved to `config.toml` |
-
-Answers as you type:
-
-| | |
-| :---: | :---: |
-| ![2 * (3 + 4)^2 = 98](docs/images/calc.png) | ![100 USD in Turkish lira](docs/images/currency.png) |
-| ![15:00 in Istanbul is 12:00 in London](docs/images/time.png) | ![10 km is 6.21 miles](docs/images/units.png) |
-
-Cmd+K shows more actions for the selected row:
-
-![Actions for Calculator: Show in Finder, Copy Path](docs/images/actions.png)
+<p align="center">
+  <img src="docs/images/demo.gif" width="720" alt="Typing calc, 100 usd to try, 15:00 istanbul to london, :heart and pass into fener">
+</p>
 
 ## Features
 
-- **Apps**, ranked by how often and how recently you open them. fener also learns which row
-  you pick for what you type.
-- **Files** through Spotlight, plus **Recent Files** and **Screenshots** views with thumbnails.
-- **Clipboard history**: text, files and images, encrypted, with password-manager copies
-  skipped.
-- **Calculator and units**, **currency conversion** (ECB rates), and **time zones and date
-  math** (`days until dec 31`).
-- **Emoji and symbols**, **snippets** with placeholders, and an offline **dictionary**.
-- **System**: lock, sleep, restart, empty Trash and more, plus System Settings panes, audio
-  output and input switching, a process list (`:3000` finds what listens on a port), and a
-  color picker.
-- **Generators**: UUIDs, passwords and lorem ipsum.
-- **Browser bookmarks** (Chromium-based browsers), **editor projects** (VS Code, Cursor,
-  VSCodium, Windsurf) and **web searches** with keywords (`gh swift toml`).
-- **Windows** from the [OmniWM](https://omniwm.app) tiling window manager.
-- **Your own menus**: TOML files or scripts, with submenus, confirmations, terminal commands
-  and live-refreshing entries.
-- **Themes**: Tokyo Night by default, Catppuccin Mocha included, or your own colors, font
-  and layout.
+<table>
+  <tr>
+    <td width="50%" valign="top">
+      <img src="docs/images/answers.png" alt="Answers for a sum, a currency conversion, a time zone and a date">
+      <h3>Answers as you type</h3>
+      Math, units, currencies with the ECB's daily rates, time zones and date math. Return copies the result.
+    </td>
+    <td width="50%" valign="top">
+      <img src="docs/images/menus.png" alt="A custom Trigger menu with toggles, a focus timer, generators and audio devices">
+      <h3>Menus you write</h3>
+      Any shell command becomes a menu entry, and any script that prints lines becomes a menu, with submenus, confirmations and live refresh.
+    </td>
+  </tr>
+  <tr>
+    <td width="50%" valign="top">
+      <img src="docs/images/emoji.png" alt="Emoji search for heart">
+      <h3>Emoji, snippets and more</h3>
+      Emoji and symbols with <code>:</code>, text snippets with placeholders, an offline dictionary, UUIDs and passwords.
+    </td>
+    <td width="50%" valign="top">
+      <img src="docs/images/settings.png" alt="fener Settings with the shortcut, position, screen and theme">
+      <h3>Settings in the panel or in a file</h3>
+      Change the shortcut, position, theme and sources in fener Settings, or edit <code>config.toml</code>. Both stay in sync.
+    </td>
+  </tr>
+</table>
 
-## Compared with other launchers
+And also:
+
+- **Apps** ranked by how often you open them. fener learns what you pick for what you type.
+- **Files** through Spotlight, plus Recent Files and Screenshots with thumbnails.
+- **Clipboard history** for text, files and images, encrypted on disk. Password managers' copies are skipped.
+- **System actions**: lock, sleep, restart, empty Trash, switch audio devices, find what listens on a port, pick a color.
+- **Bookmarks** from Chromium-based browsers, **projects** from VS Code-family editors, **web searches** with keywords (`gh swift toml`).
+- **Windows** from the [OmniWM](https://omniwm.app) tiling window manager.
+- **Themes**: Tokyo Night by default, Catppuccin Mocha included, or your own.
+
+## Install
+
+### Download
+
+1. Download the latest `fener-<version>.zip` from [Releases](https://github.com/omerdikyol/fener/releases/latest), unzip it and move `fener.app` to Applications.
+2. Open it. The panel appears, and fener adds itself to Login Items.
+3. Press <kbd>⌘</kbd> <kbd>Space</kbd>. First turn off Spotlight's shortcut in System Settings › Keyboard › Keyboard Shortcuts › Spotlight, or pick another shortcut in fener Settings.
+
+fener is signed and notarized, runs on Apple Silicon and Intel, and needs macOS 14 or later.
+Icons use a [Nerd Font](https://www.nerdfonts.com): `brew install --cask font-jetbrains-mono-nerd-font`.
+
+### Build from source
+
+```sh
+git clone https://github.com/omerdikyol/fener.git
+cd fener && ./scripts/install.sh
+```
+
+This needs Xcode or the Command Line Tools. See the [guide](docs/guide.md#building-from-source) for details.
+
+## Quick start
+
+| Type | To |
+| --- | --- |
+| anything | search apps, menus, settings, snippets and more |
+| `2 * (3 + 4)^2`, `10 km to mi`, `100 usd to try` | get an answer; <kbd>Return</kbd> copies it |
+| `time in tokyo`, `days until dec 31` | ask about times and dates |
+| `/` `:` `*` `!` `;` `>` | search only files, emoji, clipboard, snippets, windows or menus |
+| `gh swift toml` | search the web with a keyword |
+
+<kbd>⌘</kbd> <kbd>K</kbd> shows more actions for the selected row, <kbd>⌘</kbd> <kbd>1</kbd>–<kbd>9</kbd> runs a row, and <kbd>Esc</kbd> closes.
+The [guide](docs/guide.md) covers keys, menus, snippets, themes and the command line.
+
+## Make it yours
+
+Settings live in `~/.config/fener/config.toml`, with every option and its default in
+`config.reference.toml` next to it. A menu is a small TOML file:
+
+```toml
+# ~/.config/fener/menus/capture.toml
+[[entry]]
+name = "Screenshot of an area"
+icon = "nf-md-crop"
+command = "screencapture -ic"
+
+[[entry]]
+name = "Restart Dock"
+command = "killall Dock"
+confirm = true
+```
+
+Keep the folder in your dotfiles; fener applies changes as soon as you save.
+
+## Private by design
+
+- **No telemetry, no update checks, no account.** The only network request is the European Central Bank's public exchange-rate file, at most once a day, when you convert a currency.
+- **Clipboard history is encrypted** with a key in your Keychain, never leaves your Mac, and can be turned off.
+- **Few permissions.** fener needs no Accessibility, Input Monitoring or Screen Recording.
+
+Details are in the [guide](docs/guide.md#privacy-and-permissions).
+
+## How it compares
 
 Every one of these is a good launcher. Here is how fener differs.
 
@@ -93,263 +155,39 @@ the whole source of, and trust not to talk to the network.
 Alfred), AI chat in the launcher (Raycast), snippets that expand as you type (Raycast or
 Alfred), or nothing to install (Spotlight).
 
-## Install
+## FAQ
 
-fener needs macOS 14 or later and a [Nerd Font](https://www.nerdfonts.com) for its icons. The
-default theme uses JetBrainsMono Nerd Font (`brew install --cask font-jetbrains-mono-nerd-font`);
-a theme can set another.
+<details>
+<summary><b>Pressing ⌘ Space opens Spotlight, not fener.</b></summary>
 
-### Download
+macOS gives ⌘ Space to Spotlight. Turn it off in System Settings › Keyboard › Keyboard Shortcuts › Spotlight, or choose another shortcut in fener Settings › Shortcut. fener lists the clash at the top of its panel until it is resolved.
+</details>
 
-1. Download `fener-<version>.zip` from [Releases](https://github.com/omerdikyol/fener/releases),
-   unzip it and move `fener.app` to Applications. It is signed and notarized by Apple, and
-   runs on Apple Silicon and Intel.
-2. Open it. The panel appears, and fener adds itself to Login Items (System Settings ›
-   General › Login Items) so it starts when you log in.
-3. Optionally, put the `fener` command on your PATH:
+<details>
+<summary><b>Why doesn't picking a snippet type it for me?</b></summary>
 
-   ```sh
-   mkdir -p ~/.local/bin && ln -sf /Applications/fener.app/Contents/MacOS/fener ~/.local/bin/fener
-   ```
+Typing into other apps needs the Accessibility permission, which fener does without. Snippets are copied; paste them with <kbd>⌘</kbd> <kbd>V</kbd>.
+</details>
 
-Opening fener.app again shows the panel. To remove it, choose System › Quit fener, turn it
-off in Login Items and delete the app.
+<details>
+<summary><b>Can I open fener from Karabiner, skhd or Hammerspoon?</b></summary>
 
-### Build from source
+Yes. Run `fener toggle` from any tool; `extras/karabiner-rule.json` maps Hyper+Space to it. See the [guide](docs/guide.md#opening-fener).
+</details>
 
-You need the Swift toolchain (Xcode, or the Command Line Tools: `xcode-select --install`).
+<details>
+<summary><b>How do I uninstall it?</b></summary>
 
-```sh
-git clone https://github.com/omerdikyol/fener.git
-cd fener
-./scripts/install.sh
-```
-
-The script builds `fener.app` into `~/Applications`, links the `fener` command to
-`~/.local/bin/fener`, and starts it as a LaunchAgent (`io.github.omerdikyol.fener`), so it
-runs at login and restarts if it crashes. Run it again to update.
-
-If you have a code-signing certificate (an Apple developer account's "Developer ID
-Application" or "Apple Development"), the script signs the app with it, and macOS keeps
-recognizing fener after you rebuild: the Keychain and privacy permissions do not ask again.
-Set `FENER_SIGN_IDENTITY` to choose one. Without a certificate the app is signed ad hoc and
-macOS treats every rebuild as a new app. `./scripts/uninstall.sh` stops and removes it and leaves your
-config alone.
-
-On its first start fener creates `~/.config/fener/config.toml` with every default. To start
-from the example menus, themes and snippets too (existing files are not overwritten):
-
-```sh
-mkdir -p ~/.config/fener
-rsync -a --ignore-existing extras/menus extras/themes extras/snippets extras/quicklinks.toml ~/.config/fener/
-```
-
-Some example menus call tools you may not have (`omniwmctl` for OmniWM, `sketchybar`); they
-say so in the menu instead of failing. Without a `menus/menu.toml`, the empty search lists
-your apps.
-
-### A key to open it
-
-The default shortcut is Cmd+Space. macOS gives Cmd+Space to Spotlight, so turn Spotlight's
-off first: System Settings › Keyboard › Keyboard Shortcuts › Spotlight › Show Spotlight
-search. Until then Spotlight keeps the key, and fener lists the clash at the top of its
-panel (open it with `~/.local/bin/fener toggle`).
-
-To use other keys, open fener Settings › Shortcut (`fener show preferences`) and press them,
-or write them in `config.toml`:
-
-```toml
-shortcut = "shift+cmd+space"
-```
-
-It needs Command or Control, or an F-key, since Option and Shift alone type characters on
-many layouts. fener registers it as a system hotkey, which needs no Input Monitoring or
-Accessibility permission. A shortcut another app already uses is reported in the panel.
-
-You can also leave `shortcut` empty and run `~/.local/bin/fener toggle` from any tool that
-can run a shell command. With [Karabiner-Elements](https://karabiner-elements.pqrs.org),
-`extras/karabiner-rule.json` maps Hyper+Space (Control+Option+Command+Space, for example
-Caps Lock remapped to Hyper) to that command. Add it under Complex Modifications, or paste
-it into the `rules` array of `~/.config/karabiner/karabiner.json`. skhd, Hammerspoon or
-BetterTouchTool work the same way.
-
-## Using it
-
-| Key | Does |
-| --- | --- |
-| Return | run the selected row |
-| Up / Down, Ctrl+N / Ctrl+P, Ctrl+J / Ctrl+K | move |
-| Cmd+1 … Cmd+9 | run row 1–9 |
-| Cmd+K | more actions for the selected row (Show in Finder, Quick Look, Copy Path, Edit, Quit, …) |
-| Cmd+Return | the first of those actions |
-| Backspace on an empty search | back to the previous menu |
-| Escape | close |
-
-The main search ranks apps, menus, system actions, snippets, System Settings panes, recent
-editor projects, generators, browser bookmarks and open windows together. It learns which
-row you pick for what you type, so `g` soon means the app you open with `g`. A web search
-row is always last.
-
-Start with a prefix to search one thing (change them in `[prefixes]`):
-
-| Prefix | Searches |
-| --- | --- |
-| `=` | calculator |
-| `/` | files (Spotlight, under your home folder) |
-| `:` | emoji and symbols |
-| `*` | clipboard history |
-| `>` | your menus |
-| `;` | open windows (OmniWM) |
-| `!` | snippets |
-
-Answers appear as you type, with no prefix needed:
-
-```
-2 * (3 + 4)^2         10 km to mi          72 f in c          1.5 gib to mb
-100 usd to try        €50 in gbp
-time in tokyo         15:00 istanbul to london
-days until dec 31     today + 30 days      2026-12-24 + 1 month
-```
-
-`g fener`, `gh swift toml` and other `<keyword> <text>` searches open in your browser; add
-your own in `quicklinks.toml`.
-
-### Command line
-
-```
-fener toggle               show or hide the panel
-fener show <menu> [text]   open a menu or built-in view (or "search"), optionally with text typed
-fener hide
-fener reload               re-read config, menus, themes and apps
-fener pick-color           pick a color on screen; copies its hex value
-fener query [@view] text   print what a search lists (for scripts and tests)
-fener config [defaults]    show the config files, or print every default
-fener log [-f]             show (or follow) the log
-fener ping                 exit 0 if fener is running
-```
-
-Built-in views for `fener show` and for menu entries: `apps`, `files`, `recent`,
-`screenshots`, `clipboard`, `emoji`, `snippets`, `windows`, `calc`, `dictionary`,
-`system`, `quit`, `settings` (System Settings panes), `audio`, `bookmarks`, `projects`,
-`generate`, `processes`, `used` (recently picked) and `preferences` (fener's own settings).
-
-## Configuration
-
-Everything lives in `~/.config/fener/` and applies as soon as you save a file:
-
-```
-config.toml             your settings
-config.reference.toml   every option with its default and a comment (rewritten on start, never read)
-quicklinks.toml         web search keywords and the default engine
-themes/<name>.toml      colors, font and layout; select with theme = "<name>"
-menus/<name>.toml       your menus
-menus/<name>[.sh]       menus generated by a script
-snippets/<name>.txt     text snippets
-```
-
-Most settings can also be changed from the panel: Setup › fener Settings, or
-`fener show preferences`. Those changes are written to `config.toml` with your comments
-kept. Mistakes are listed at the top of the empty search and in `fener log`, with the line
-number. A wrong value or unknown key is skipped and the rest of the file applies; a file that
-is not valid TOML is ignored (built-in defaults are used) until it is fixed.
-
-### Menus
-
-A menu is a TOML file of entries:
-
-```toml
-prompt = "Capture…"
-width = 320                       # optional panel width
-
-[[entry]]
-name = "Screenshot of an area"
-icon = "nf-md-crop"               # Nerd Font glyph name, SF Symbol, or an app or image path
-command = "screencapture -ic"     # run with /bin/sh -c
-
-[[entry]]
-name = "Logs"
-command = "tail -f /var/log/system.log"
-terminal = true                   # run in a terminal window (terminal_command in config.toml)
-
-[[entry]]
-name = "Restart Dock"
-command = "killall Dock"
-confirm = true                    # ask first
-
-[[entry]]
-name = "Themes"
-menu = "theme"                    # open another menu or a built-in view
-```
-
-A menu can also be an executable file. Run with no arguments, it prints its entries, one per
-line, as plain names or JSON objects such as
-`{"name": "Dark Mode: On", "value": "dark", "icon": "nf-md-theme_light_dark"}` (or one JSON
-array). fener runs it again with the chosen entry's `value` (or name) as `$1`. A line
-`{"refresh": 2}` makes fener re-run it every 2 seconds while it is open.
-`extras/menus/toggle.sh` is a small example.
-
-### Snippets
-
-One file per snippet in `snippets/`, named after the file. Picking one copies its text with
-these filled in: `{clipboard}`, `{uuid}`, `{date}`, `{time}`, `{datetime}` and
-`{date:<pattern>}` (a `DateFormatter` pattern such as `{date:EEE d MMM}`). Paste it with
-Cmd+V; fener does not type for you, because that needs the Accessibility permission.
-
-### Themes
-
-Copy `extras/themes/tokyo-night.toml` to `themes/<name>.toml`, change what you like
-(colors, opacity, font, width, row height, corner radius, how many rows show) and set
-`theme = "<name>"`. Catppuccin Mocha is included as a second example.
-
-## Privacy and permissions
-
-- **Network:** none, except one file. When you type a currency conversion and the cached
-  rates are over a day old, fener downloads the European Central Bank's public daily
-  reference rates. `[currency] enabled = false` turns that off. There is no telemetry and no
-  update check. Quicklinks and web search rows open your browser; fener sends nothing itself.
-- **Clipboard history** is stored encrypted (AES-GCM) in
-  `~/Library/Application Support/fener/clipboard`, with a random key in your login
-  Keychain, readable only by your user and excluded from backups. Copies that password
-  managers mark as concealed or transient are never recorded, nor anything copied while an
-  app in `[clipboard] ignore_apps` is in front. Items older than `keep_days` are deleted.
-  `[clipboard] enabled = false` turns it off.
-- **Learning** (which row you picked for which text, and the last 10 picks) stays in
-  `~/Library/Application Support/fener/learned.json`. System › Forget Search History clears
-  it; `learn_queries = false` turns it off. Keystrokes and abandoned searches are never
-  recorded.
-- **The log** (`~/Library/Logs/fener/fener.log`) records events and errors, never what you
-  type or copy.
-
-fener asks for no permissions up front and does not need Accessibility, Input Monitoring or
-Screen Recording. macOS may ask once for:
-
-- Keychain access, when the clipboard key is first read; choose Always Allow. If the app is
-  signed ad hoc (no certificate), macOS asks again after each rebuild.
-- Automation of System Events or Finder, the first time you use Restart, Shut Down, Log Out
-  or Empty Trash.
+Choose System › Quit fener, remove it from Login Items and delete the app. If you built it from source, run `./scripts/uninstall.sh`. Your settings stay in `~/.config/fener` until you delete that folder.
+</details>
 
 ## Limitations
 
-- Snippets are copied for you to paste, not typed, which would need Accessibility.
-- Window switching needs OmniWM. Some windows have no title there (`docs/known-issues.md`).
+- Snippets are copied, not typed (see the FAQ).
+- Window switching needs OmniWM.
 - Bookmarks come only from Chromium-based browsers.
 - Tested on macOS 26 on Apple Silicon. macOS 14 and 15 and Intel Macs should work but are untested.
 
-## Development
-
-```sh
-swift build
-swift test
-swift run fener --show --demo   # a second copy for testing; quit the installed one first
-swift run -c release fener --bench   # scan and search timings
-```
-
-Sources are in `Sources/Fener`, one file per feature. See `docs/known-issues.md` for known
-problems.
-
 ## License
 
-MIT, see [LICENSE](LICENSE). fener is written from scratch; it takes ideas from Omarchy and
-Walker but no code or theme files. Bundled third-party data (Nerd Font glyph names, the
-Tokyo Night and Catppuccin palettes) is listed in
-[THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
+MIT, see [LICENSE](LICENSE). fener is written from scratch; it takes ideas from [Omarchy](https://omarchy.org) and Walker but no code. Third-party data (Nerd Font glyph names, the Tokyo Night and Catppuccin palettes) is listed in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).

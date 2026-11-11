@@ -85,7 +85,7 @@ screenshot_thumbnails = 40
 
 [apps]
 folders = ["/Applications", "/System/Applications", "~/Applications"]
-browser = "helium"         # bookmarks: helium | chrome | brave | arc | edge | vivaldi | chromium | none
+browser = "auto"           # bookmarks: auto (the default browser) | chrome | arc | brave | edge | vivaldi | helium | chromium | none
 editor = "vscode"          # projects and Edit actions: vscode | cursor | vscodium | windsurf | textedit
 terminal = "Ghostty"       # "Open in …" actions: an app name
 

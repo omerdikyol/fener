@@ -33,3 +33,12 @@ final class HotkeySystemTests: XCTestCase {
         XCTAssertNil(Hotkey.systemOwner(try XCTUnwrap(Hotkey.parse("shift+cmd+space")), hotkeys: [:]))
     }
 }
+
+final class BookmarkBrowserTests: XCTestCase {
+    func testAutoPicksTheDefaultBrowserThenAnInstalledOne() {
+        XCTAssertEqual(Bookmarks.resolve("brave", defaultBundleId: "com.google.Chrome", installed: { _ in true }), "brave")
+        XCTAssertEqual(Bookmarks.resolve("auto", defaultBundleId: "company.thebrowser.Browser", installed: { _ in false }), "arc")
+        XCTAssertEqual(Bookmarks.resolve("auto", defaultBundleId: "com.apple.Safari", installed: { $0 == "vivaldi" }), "vivaldi")
+        XCTAssertEqual(Bookmarks.resolve("auto", defaultBundleId: nil, installed: { _ in false }), "none")
+    }
+}

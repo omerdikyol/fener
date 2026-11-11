@@ -51,7 +51,7 @@ import AppKit
 ///
 ///     [apps]
 ///     folders = ["/Applications", "/System/Applications", "~/Applications"]
-///     browser = "helium"             # bookmarks: helium | chrome | brave | arc | edge | vivaldi | chromium | none
+///     browser = "auto"               # bookmarks: auto | chrome | arc | brave | edge | vivaldi | helium | chromium | none
 ///     editor = "vscode"              # projects and Edit actions: vscode | cursor | vscodium | windsurf | textedit
 ///     terminal = "Ghostty"           # "Open in Terminal" actions: an app name
 ///
@@ -90,7 +90,7 @@ struct Config: Equatable {
     var screenshotThumbnails = 40
     // [apps]
     var appFolders = ["/Applications", "/System/Applications", "~/Applications"]
-    var browser = "helium"
+    var browser = "auto"
     var editor = "vscode"
     var terminalApp = "Ghostty"
     // [learning]
@@ -100,7 +100,7 @@ struct Config: Equatable {
     static let choices: [String: [String]] = [
         "panel.position": ["center", "upper", "top"],
         "panel.screen": ["mouse", "focused", "main"],
-        "apps.browser": ["helium", "chrome", "brave", "arc", "edge", "vivaldi", "chromium", "none"],
+        "apps.browser": ["auto", "chrome", "arc", "brave", "edge", "vivaldi", "helium", "chromium", "none"],
         "apps.editor": ["vscode", "cursor", "vscodium", "windsurf", "textedit"],
     ]
 

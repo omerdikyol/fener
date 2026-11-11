@@ -22,7 +22,7 @@ menu = "screenshots"
 
 [[entry]]
 name = "Bookmarks"
-subtitle = "Helium"
+subtitle = "your browser"
 icon = "nf-md-bookmark"
 menu = "bookmarks"
 

@@ -59,7 +59,7 @@ func settingsMenuItems(_ q: String) -> [Item] {
         NSWorkspace.shared.urlForApplication(withBundleIdentifier: terminalIds[$0]!) != nil || $0 == c.terminalApp
     }
     let editors = Editors.all.filter { $0.app != nil || $0.key == c.editor }
-    let browsers = ["helium", "chrome", "brave", "arc", "edge", "vivaldi", "chromium"].filter {
+    let browsers = ["auto"] + Bookmarks.order.filter {
         FileManager.default.fileExists(atPath: NSHomeDirectory() + "/Library/Application Support/" + Bookmarks.folders[$0]!) || $0 == c.browser
     } + ["none"]
     func editFile(_ title: String, _ subtitle: String) -> Item {
@@ -103,7 +103,7 @@ func settingsMenuItems(_ q: String) -> [Item] {
             editFile("Search folders", c.fileRoots.joined(separator: ", ") + " · edit in config.toml [files] roots"),
         ]),
         ("Apps", [
-            choice("Bookmarks from", c.browser, browsers.map { ($0 == "none" ? "None" : $0.prefix(1).uppercased() + $0.dropFirst(), $0) },
+            choice("Bookmarks from", c.browser, browsers.map { ($0 == "none" ? "None" : $0 == "auto" ? "Default browser (\(Bookmarks.resolve("auto")))" : $0.prefix(1).uppercased() + $0.dropFirst(), $0) },
                    icon: "nf-md-bookmark") { setSetting("apps", "browser", .string($0)) },
             choice("Editor", c.editor, editors.map { ($0.name, $0.key) }, icon: "nf-md-pencil") { setSetting("apps", "editor", .string($0)) },
             choice("Terminal", c.terminalApp, terminals.map { ($0, $0) }, icon: "nf-md-console_line") { setSetting("apps", "terminal", .string($0)) },

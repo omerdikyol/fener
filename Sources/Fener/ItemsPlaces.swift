@@ -2,7 +2,7 @@ import AppKit
 
 let bookmarks = Box<[Bookmarks.Bookmark]>([])
 let projects = Box<[URL]>([])
-/// Re-reads Helium bookmarks and VS Code recents off the main thread (both small files).
+/// Re-reads browser bookmarks and VS Code recents off the main thread (both small files).
 func refreshBrowserAndProjects() {
     DispatchQueue.global(qos: .utility).async {
         let b = Bookmarks.load(browser: config.browser), p = VSCodeRecents.load()

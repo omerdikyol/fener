@@ -117,7 +117,7 @@ enum Audio {
     }
 }
 
-// MARK: Helium bookmarks and VS Code recents
+// MARK: browser bookmarks and VS Code recents
 
 enum Bookmarks {
     struct Bookmark { let name: String; let url: String; let folder: String }
@@ -126,9 +126,23 @@ enum Bookmarks {
     static let folders = ["helium": "net.imput.helium", "chrome": "Google/Chrome", "brave": "BraveSoftware/Brave-Browser",
                           "arc": "Arc/User Data", "edge": "Microsoft Edge", "vivaldi": "Vivaldi", "chromium": "Chromium"]
 
+    static let order = ["chrome", "arc", "brave", "edge", "vivaldi", "helium", "chromium"]
+    static let bundleIds = ["com.google.Chrome": "chrome", "company.thebrowser.Browser": "arc", "com.brave.Browser": "brave",
+                            "com.microsoft.edgemac": "edge", "com.vivaldi.Vivaldi": "vivaldi", "net.imput.helium": "helium",
+                            "org.chromium.Chromium": "chromium"]
+
+    /// "auto": the default browser when it is one fener can read, else the first one with bookmarks.
+    static func resolve(_ choice: String, defaultBundleId: String? = NSWorkspace.shared.urlForApplication(toOpen: URL(string: "https://example.com")!)
+                            .flatMap { Bundle(url: $0)?.bundleIdentifier },
+                        installed: (String) -> Bool = { FileManager.default.fileExists(atPath: NSHomeDirectory() + "/Library/Application Support/" + folders[$0]!) }) -> String {
+        guard choice == "auto" else { return choice }
+        if let id = defaultBundleId, let b = bundleIds[id] { return b }
+        return order.first(where: installed) ?? "none"
+    }
+
     /// Chromium "Bookmarks" JSON from every profile of the configured browser ([apps] browser).
     static func load(browser: String) -> [Bookmark] {
-        guard let folder = folders[browser] else { return [] }
+        guard let folder = folders[resolve(browser)] else { return [] }
         let base = URL(fileURLWithPath: NSHomeDirectory()).appendingPathComponent("Library/Application Support/" + folder)
         let profiles = (try? FileManager.default.contentsOfDirectory(atPath: base.path)) ?? []
         return profiles.flatMap { p -> [Bookmark] in

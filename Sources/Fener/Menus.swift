@@ -7,6 +7,7 @@ struct MenuEntry: Equatable {
     var icon = ""
     var command = ""      // run with /bin/sh -c
     var menu = ""         // open this menu instead (a submenu)
+    var keys = ""         // a shortcut to show (and search); with no command or menu the row is read-only
     var value = ""        // executable menus: what is handed back (defaults to name)
     var terminal = false  // run the command in a terminal window (config: terminal)
     var confirm = false   // ask "Yes / Cancel" first
@@ -34,6 +35,7 @@ struct Menu {
     ///     command = "theme tokyo"    # or: menu = "other-menu" (a menu file or a built-in:
     ///                                #     apps, clipboard, emoji, files, system, windows, calc,
     ///                                #     quit, snippets, dictionary)
+    ///     keys = "Caps + M"          # optional: a shortcut to list; alone (no command or menu) the row only informs
     ///     terminal = true            # optional: run the command in a terminal window
     ///     confirm = true             # optional: ask before running
     static func parse(name: String, toml: String) throws -> Menu {
@@ -52,11 +54,12 @@ struct Menu {
                 return b
             }
             let e = MenuEntry(name: try str("name"), subtitle: try str("subtitle"), icon: try str("icon"),
-                              command: try str("command"), menu: try str("menu"),
+                              command: try str("command"), menu: try str("menu"), keys: try str("keys"),
                               terminal: try bool("terminal"), confirm: try bool("confirm"))
             if e.name.isEmpty { throw Toml.ParseError(line: 0, message: "entry \(i + 1) has no name") }
-            if e.command.isEmpty == e.menu.isEmpty {
-                throw Toml.ParseError(line: 0, message: "entry \(i + 1) (\(e.name)) needs exactly one of command or menu")
+            // command and menu are exclusive; with neither, `keys` makes the row a read-only shortcut hint.
+            if !e.command.isEmpty && !e.menu.isEmpty || e.command.isEmpty && e.menu.isEmpty && e.keys.isEmpty {
+                throw Toml.ParseError(line: 0, message: "entry \(i + 1) (\(e.name)) needs one of command, menu or keys")
             }
             entries.append(e)
         }

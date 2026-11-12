@@ -5,7 +5,7 @@ import AppKit
 func rank(_ entries: [MenuEntry], _ q: String, subtitles: Bool = true) -> [(MenuEntry, Int)] {
     if q.isEmpty { return entries.enumerated().map { ($1, -$0) } }
     return entries.compactMap { e in
-        [Fuzzy.score(q, e.name), subtitles ? Fuzzy.score(q, e.subtitle) : nil].compactMap { $0 }.max().map { (e, $0) }
+        [Fuzzy.score(q, e.name), Fuzzy.score(q, e.keys), subtitles ? Fuzzy.score(q, e.subtitle) : nil].compactMap { $0 }.max().map { (e, $0) }
     }.sorted { $0.1 > $1.1 }
 }
 
@@ -32,7 +32,8 @@ func menuMode(_ m: Menu) -> Mode {
 }
 
 func entryItem(_ e: MenuEntry, of m: Menu, score: Int) -> Item {
-    var item = Item(id: "menu:\(m.name):\(e.name)", title: e.name, subtitle: e.subtitle,
+    var item = Item(id: "menu:\(m.name):\(e.name)", title: e.name,
+                    subtitle: e.keys.isEmpty ? e.subtitle : e.subtitle.isEmpty ? e.keys : "\(e.keys)  ·  \(e.subtitle)",
                     accessory: e.menu.isEmpty ? "" : "›", icon: Icons.named(e.icon, theme: theme), score: score)
     if let file = m.file {
         item.actions = {

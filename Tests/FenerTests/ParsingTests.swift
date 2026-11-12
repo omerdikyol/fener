@@ -80,10 +80,14 @@ final class MenuTests: XCTestCase {
         XCTAssertEqual(m.entries[1].menu, "system")
     }
 
-    func testTomlMenuValidation() {
+    func testTomlMenuValidation() throws {
         XCTAssertThrowsError(try Menu.parse(name: "m", toml: "[[entry]]\ncommand = \"x\""))             // no name
         XCTAssertThrowsError(try Menu.parse(name: "m", toml: "[[entry]]\nname = \"a\""))                // no action
         XCTAssertThrowsError(try Menu.parse(name: "m", toml: "[[entry]]\nname = \"a\"\ncommand = \"x\"\nmenu = \"y\""))
+        // a shortcut hint needs no action; its keys are searched
+        let hint = try Menu.parse(name: "k", toml: "[[entry]]\nname = \"Mic mute\"\nkeys = \"Caps + M\"").entries
+        XCTAssertEqual(hint.first?.keys, "Caps + M")
+        XCTAssertEqual(rank(hint, "caps", subtitles: false).count, 1)
         XCTAssertThrowsError(try Menu.parse(name: "m", toml: "[[entry]]\nname = 3\ncommand = \"x\""))   // wrong type
     }
 

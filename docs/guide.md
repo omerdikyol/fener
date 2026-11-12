@@ -139,7 +139,14 @@ confirm = true                    # ask first
 [[entry]]
 name = "Themes"
 menu = "theme"                    # open another menu or a built-in view
+
+[[entry]]
+name = "Mic mute"
+keys = "Caps + M"                 # a shortcut cheat sheet row: no command, choosing it does nothing
 ```
+
+`keys` is shown under the name and searched, also from the main search, so a menu of `keys`
+rows works as a searchable list of your shortcuts.
 
 A menu can also be an executable file. Run with no arguments, it prints its entries, one per
 line, as plain names or JSON objects such as

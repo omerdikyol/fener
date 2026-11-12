@@ -83,7 +83,7 @@ This puts the `fener` command on your PATH. Icons need a Nerd Font:
 
 ### Download
 
-1. Download [fener-0.1.0.dmg](https://github.com/omerdikyol/fener/releases/download/v0.1.0/fener-0.1.0.dmg) (or any version from [Releases](https://github.com/omerdikyol/fener/releases)), open it and drag fener to Applications.
+1. Download [fener-0.1.0.dmg](https://github.com/omerdikyol/fener/releases/download/v0.2.0/fener-0.2.0.dmg) (or any version from [Releases](https://github.com/omerdikyol/fener/releases)), open it and drag fener to Applications.
 2. Open it. The panel appears, and fener adds itself to Login Items.
 3. Press <kbd>⌘</kbd> <kbd>Space</kbd>. First turn off Spotlight's shortcut in System Settings › Keyboard › Keyboard Shortcuts › Spotlight, or pick another shortcut in fener Settings.
 

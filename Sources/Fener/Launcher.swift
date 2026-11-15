@@ -514,7 +514,8 @@ private final class Cell: NSView {
         let h = bounds.height, w = bounds.width, i = theme.iconSize
         icon.frame = NSRect(x: 14, y: ((h - i) / 2).rounded(), width: i, height: i)
         let x = 14 + i + 12
-        title.frame = NSRect(x: x, y: ((h - 18) / 2).rounded(), width: w - x - 48, height: 18)
-        accessory.frame = NSRect(x: w - 44, y: ((h - 18) / 2).rounded(), width: 32, height: 18)
+        let aw = max(32, ceil(accessory.intrinsicContentSize.width))  // fit the text, e.g. "⌃⌥⌘Space"
+        title.frame = NSRect(x: x, y: ((h - 18) / 2).rounded(), width: w - x - aw - 16, height: 18)
+        accessory.frame = NSRect(x: w - aw - 12, y: ((h - 18) / 2).rounded(), width: aw, height: 18)
     }
 }
